@@ -1,0 +1,91 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Caminho canônico (ex.: /cupom-desconto/loja). Sem query string. */
+  path?: string;
+  noindex?: boolean;
+  jsonLd?: object | object[];
+  ogImage?: string;
+}
+
+const { title, description, path, noindex = false, jsonLd, ogImage } = Astro.props;
+const site = Astro.site!;
+const canonical = new URL(path ?? Astro.url.pathname, site).toString();
+const fullTitle = title.includes('Cuponica') ? title : `${title} | Cuponica`;
+const schemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Cuponica',
+  url: site.toString(),
+};
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex
+      ? <meta name="robots" content="noindex, follow" />
+      : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Cuponica" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, site).toString()} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#ff5a1f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
+    {schemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href="/">Cupon<span>ica</span></a>
+        <nav class="nav" aria-label="Principal">
+          <a href="/lojas">Todas as lojas</a>
+          <a href="/categoria/moda">Moda</a>
+          <a href="/categoria/eletronicos">Eletrônicos</a>
+          <a href="/categoria/casa">Casa</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav aria-label="Rodapé">
+          <a href="/lojas">Lojas de A a Z</a>
+          <a href="/sobre">Sobre o Cuponica</a>
+          <a href="/como-funciona">Como funciona</a>
+          <a href="/privacidade">Privacidade</a>
+        </nav>
+        <p>O Cuponica pode receber comissão quando você compra por meio dos nossos links. Isso não altera o preço que você paga.</p>
+        <p>© {new Date().getFullYear()} Cuponica</p>
+      </div>
+    </footer>
+    <script is:inline>
+      // Único JavaScript do site: revela e copia o código quando o visitante clica em "Ver cupom".
+      // O link abre a loja em nova aba (via /ir/, com tracking) e esta aba mostra o código.
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('[data-reveal]');
+        if (!a) return;
+        var card = a.closest('.coupon');
+        if (!card) return;
+        card.classList.add('revealed');
+        var code = card.querySelector('.code-box');
+        if (code && navigator.clipboard) navigator.clipboard.writeText(code.dataset.code || '').catch(function () {});
+      });
+    </script>
+  </body>
+</html>

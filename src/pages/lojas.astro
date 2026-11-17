@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getStores } from '../lib/data';
+import { breadcrumbSchema } from '../lib/seo';
+
+const stores = await getStores();
+const groups = new Map<string, typeof stores>();
+for (const s of stores) {
+  const letter = s.name.normalize('NFD').replace(/[̀-ͯ]/g, '').charAt(0).toUpperCase();
+  const key = /[A-Z]/.test(letter) ? letter : '#';
+  groups.set(key, [...(groups.get(key) || []), s]);
+}
+const letters = [...groups.keys()].sort();
+const crumbs = [{ name: 'Início', path: '/' }, { name: 'Lojas de A a Z', path: '/lojas' }];
+---
+<Base
+  title="Todas as lojas com cupom de desconto"
+  description={`Lista completa das ${stores.length} lojas com cupons de desconto no Cuponica, de A a Z.`}
+  path="/lojas"
+  jsonLd={breadcrumbSchema(Astro.site!, crumbs)}
+>
+  <Breadcrumbs items={crumbs} />
+  <h1>Lojas de A a Z</h1>
+  {letters.map((l) => (
+    <section>
+      <h2>{l}</h2>
+      <ul class="store-grid">
+        {groups.get(l)!.map((s) => (
+          <li><a class="store-tile" href={`/cupom-desconto/${s.slug}`}><strong>{s.name}</strong><small>{s.active_coupons} ativos</small></a></li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>

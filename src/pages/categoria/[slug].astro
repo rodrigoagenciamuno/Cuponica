@@ -1,0 +1,48 @@
+---
+import Base from '../../layouts/Base.astro';
+import CouponCard from '../../components/CouponCard.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getCategory, getStores, getStoreCoupons } from '../../lib/data';
+import { breadcrumbSchema, monthYear } from '../../lib/seo';
+
+const category = await getCategory(String(Astro.params.slug));
+if (!category) return Astro.rewrite('/404');
+
+const stores = (await getStores()).filter((s) => s.categories.includes(category.id));
+const couponLists = await Promise.all(stores.map((s) => getStoreCoupons(s.id)));
+const coupons = couponLists
+  .flat()
+  .filter((c) => !c.expired)
+  .sort((a, b) => b.priority - a.priority)
+  .slice(0, 30)
+  .map((c) => ({ coupon: c, store: stores.find((s) => s.id === c.store_id)! }));
+
+const path = `/categoria/${category.slug}`;
+const crumbs = [{ name: 'Início', path: '/' }, { name: category.name, path }];
+---
+<Base
+  title={`Cupons de desconto em ${category.name} | ${monthYear()}`}
+  description={`${category.intro ?? ''} ${stores.length} lojas e ${coupons.length} ofertas válidas hoje.`.trim()}
+  path={path}
+  jsonLd={breadcrumbSchema(Astro.site!, crumbs)}
+>
+  <Breadcrumbs items={crumbs} />
+  <h1>Cupons de desconto em {category.name}</h1>
+  {category.intro && <p class="muted">{category.intro}</p>}
+
+  <section>
+    <h2>Lojas de {category.name}</h2>
+    <ul class="store-grid">
+      {stores.map((s) => (
+        <li><a class="store-tile" href={`/cupom-desconto/${s.slug}`}><strong>{s.name}</strong><small>{s.active_coupons} ativos</small></a></li>
+      ))}
+    </ul>
+  </section>
+
+  <section>
+    <h2>Melhores cupons de {category.name}</h2>
+    {coupons.length
+      ? <ul class="coupon-list">{coupons.map(({ coupon, store }) => <CouponCard coupon={coupon} store={store} showStore />)}</ul>
+      : <p class="muted">Nenhum cupom ativo nesta categoria agora.</p>}
+  </section>
+</Base>

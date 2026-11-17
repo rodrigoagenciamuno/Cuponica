@@ -1,0 +1,44 @@
+---
+import type { Coupon, Store } from '../lib/data';
+
+interface Props {
+  coupon: Coupon;
+  store: Store;
+  /** Mostra o nome da loja no card (usado na home e em categorias). */
+  showStore?: boolean;
+}
+const { coupon, store, showStore = false } = Astro.props;
+const goUrl = `/ir/${coupon.id}?p=${encodeURIComponent(Astro.url.pathname)}`;
+const fmt = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' });
+const badge = coupon.discount_label || (coupon.type === 'code' ? 'Cupom' : 'Oferta');
+---
+<li class:list={['coupon', { 'is-expired': coupon.expired }]} id={`cupom-${coupon.id}`}>
+  <div class="coupon-badge">{badge}</div>
+  <div>
+    {showStore && <a class="coupon-store" href={`/cupom-desconto/${store.slug}`}>{store.name}</a>}
+    <h3>{coupon.title}</h3>
+    {coupon.description && <p>{coupon.description}</p>}
+    <div class="coupon-meta">
+      {coupon.verified && !coupon.expired && <span class="tag tag-ok">Verificado</span>}
+      {coupon.exclusive && !coupon.expired && <span class="tag tag-ex">Exclusivo</span>}
+      {coupon.expired
+        ? <span>Expirou em {fmt.format(coupon.expires_at!)}</span>
+        : coupon.expires_at
+          ? <span>Válido até {fmt.format(coupon.expires_at)}</span>
+          : <span>Sem data de validade informada</span>}
+    </div>
+  </div>
+  <div class="coupon-action">
+    {coupon.expired ? (
+      <span class="muted">Cupom expirado</span>
+    ) : coupon.type === 'code' && coupon.code ? (
+      <>
+        <a class="btn btn-reveal" href={goUrl} target="_blank" rel="sponsored nofollow noopener" data-reveal>Ver cupom</a>
+        <div class="code-box" data-code={coupon.code}>{coupon.code}</div>
+        <noscript><div class="code-box" style="display:block">{coupon.code}</div></noscript>
+      </>
+    ) : (
+      <a class="btn" href={goUrl} target="_blank" rel="sponsored nofollow noopener">Ativar oferta</a>
+    )}
+  </div>
+</li>

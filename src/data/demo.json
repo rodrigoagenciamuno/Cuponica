@@ -1,0 +1,51 @@
+{
+  "_aviso": "Dados FICTÍCIOS de demonstração. Usados só enquanto o banco MySQL não está configurado.",
+  "categories": [
+    { "id": 1, "slug": "moda", "name": "Moda", "intro": "Cupons de desconto em roupas, calçados e acessórios." },
+    { "id": 2, "slug": "eletronicos", "name": "Eletrônicos", "intro": "Cupons para celulares, notebooks, games e tecnologia." },
+    { "id": 3, "slug": "casa", "name": "Casa e Decoração", "intro": "Descontos em móveis, decoração e utilidades domésticas." },
+    { "id": 4, "slug": "viagens", "name": "Viagens", "intro": "Cupons de hotéis, passagens e pacotes de viagem." }
+  ],
+  "stores": [
+    {
+      "id": 1, "slug": "loja-demo-moda", "name": "Loja Demo Moda", "website_url": "https://example.com/moda",
+      "network": "rakuten", "network_mid": "00001", "featured": 1, "categories": [1],
+      "intro": "Roupas e calçados com cupons atualizados todos os dias.",
+      "about": "A Loja Demo Moda é uma loja fictícia usada para demonstrar a página de loja do Cuponica. Aqui entra o texto editorial próprio de cada loja: como usar o cupom, política de troca, prazos de entrega e dicas para economizar.",
+      "faq": [
+        { "q": "Como usar o cupom da Loja Demo Moda?", "a": "Clique em \"Ver cupom\", copie o código e cole no campo de cupom no carrinho da loja." },
+        { "q": "O cupom vale para itens em promoção?", "a": "Depende da regra de cada cupom. As condições aparecem na descrição de cada oferta." }
+      ]
+    },
+    {
+      "id": 2, "slug": "tech-exemplo", "name": "Tech Exemplo", "website_url": "https://example.com/tech",
+      "network": "rakuten", "network_mid": "00002", "featured": 1, "categories": [2],
+      "intro": "Celulares, notebooks e acessórios com desconto.",
+      "about": "Loja fictícia de eletrônicos para demonstração.",
+      "faq": []
+    },
+    {
+      "id": 3, "slug": "casa-modelo", "name": "Casa Modelo", "website_url": "https://example.com/casa",
+      "network": "rakuten", "network_mid": "00003", "featured": 1, "categories": [3],
+      "intro": "Móveis e decoração com cupons exclusivos.",
+      "about": "Loja fictícia de casa e decoração para demonstração.",
+      "faq": []
+    },
+    {
+      "id": 4, "slug": "viaje-teste", "name": "Viaje Teste", "website_url": "https://example.com/viagens",
+      "network": "rakuten", "network_mid": "00004", "featured": 0, "categories": [4],
+      "intro": "Hotéis e pacotes com desconto.",
+      "about": "Loja fictícia de viagens para demonstração.",
+      "faq": []
+    }
+  ],
+  "coupons": [
+    { "id": 1, "store_id": 1, "type": "code", "title": "15% OFF em toda a loja", "description": "Válido para compras acima de R$ 199. Não cumulativo.", "code": "DEMO15", "discount_label": "15% OFF", "expires_at": "2027-12-31T23:59:00", "verified": 1, "exclusive": 1, "priority": 10 },
+    { "id": 2, "store_id": 1, "type": "deal", "title": "Frete grátis para Sul e Sudeste", "description": "Em pedidos acima de R$ 150.", "code": null, "discount_label": "Frete grátis", "expires_at": "2027-06-30T23:59:00", "verified": 1, "exclusive": 0, "priority": 5 },
+    { "id": 3, "store_id": 1, "type": "code", "title": "R$ 30 OFF na primeira compra", "description": "Somente para novos clientes.", "code": "BEMVINDO30", "discount_label": "R$ 30", "expires_at": "2025-01-31T23:59:00", "verified": 0, "exclusive": 0, "priority": 1 },
+    { "id": 4, "store_id": 2, "type": "code", "title": "10% OFF em notebooks", "description": "Exceto linha premium.", "code": "NOTE10", "discount_label": "10% OFF", "expires_at": "2027-03-31T23:59:00", "verified": 1, "exclusive": 0, "priority": 8 },
+    { "id": 5, "store_id": 2, "type": "deal", "title": "Até 40% OFF em acessórios", "description": "Fones, capas e carregadores.", "code": null, "discount_label": "40% OFF", "expires_at": null, "verified": 0, "exclusive": 0, "priority": 3 },
+    { "id": 6, "store_id": 3, "type": "code", "title": "R$ 100 OFF em sofás", "description": "Compras acima de R$ 1.500.", "code": "SOFA100", "discount_label": "R$ 100", "expires_at": "2027-05-31T23:59:00", "verified": 1, "exclusive": 1, "priority": 9 },
+    { "id": 7, "store_id": 4, "type": "deal", "title": "Hotéis com até 25% OFF", "description": "Reservas pelo app.", "code": null, "discount_label": "25% OFF", "expires_at": "2027-09-30T23:59:00", "verified": 0, "exclusive": 0, "priority": 4 }
+  ]
+}

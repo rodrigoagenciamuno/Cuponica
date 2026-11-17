@@ -1,0 +1,24 @@
+{
+  "name": "cuponica",
+  "version": "0.1.0",
+  "description": "Cuponica — plataforma de cupons de desconto",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
+    "preview": "astro preview",
+    "db:migrate": "node scripts/migrate.mjs",
+    "sync:cupons": "node scripts/sync-rakuten.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.13",
+    "astro": "^7.4.12",
+    "fast-xml-parser": "^5.12.1",
+    "mysql2": "^3.24.6"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

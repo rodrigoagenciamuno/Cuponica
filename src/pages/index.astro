@@ -1,0 +1,56 @@
+---
+import Base from '../layouts/Base.astro';
+import CouponCard from '../components/CouponCard.astro';
+import { getFeaturedCoupons, getStores, getCategories } from '../lib/data';
+import { monthYear } from '../lib/seo';
+
+const [coupons, stores, categories] = await Promise.all([getFeaturedCoupons(10), getStores(), getCategories()]);
+const featuredStores = stores.filter((s) => s.featured);
+const siteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Cuponica',
+  url: Astro.site!.toString(),
+};
+---
+<Base
+  title={`Cuponica: cupons de desconto válidos em ${monthYear()}`}
+  description="Cupons de desconto e ofertas verificadas das principais lojas online do Brasil. Atualizado todos os dias."
+  path="/"
+  jsonLd={siteSchema}
+>
+  <div class="hero">
+    <h1>Cupons de desconto que funcionam</h1>
+    <p>Códigos e ofertas das melhores lojas online, verificados e atualizados todos os dias.</p>
+  </div>
+
+  <section>
+    <h2>Lojas em destaque</h2>
+    <ul class="store-grid">
+      {featuredStores.map((s) => (
+        <li>
+          <a class="store-tile" href={`/cupom-desconto/${s.slug}`}>
+            <strong>{s.name}</strong>
+            <small>{s.active_coupons} {s.active_coupons === 1 ? 'cupom ativo' : 'cupons ativos'}</small>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section>
+    <h2>Cupons em destaque hoje</h2>
+    <ul class="coupon-list">
+      {coupons.map((c) => <CouponCard coupon={c} store={c.store} showStore />)}
+    </ul>
+  </section>
+
+  <section>
+    <h2>Categorias</h2>
+    <ul class="store-grid">
+      {categories.map((c) => (
+        <li><a class="store-tile" href={`/categoria/${c.slug}`}><strong>{c.name}</strong></a></li>
+      ))}
+    </ul>
+  </section>
+</Base>
