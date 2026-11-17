@@ -1,5 +1,5 @@
 -- Cuponica — schema MySQL 8
--- Rodar com: npm run db:migrate
+-- As tabelas são criadas automaticamente pelo app na primeira conexão (src/lib/db.ts).
 
 CREATE TABLE IF NOT EXISTS stores (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   store_id      INT UNSIGNED NOT NULL,
   source        VARCHAR(30) NOT NULL DEFAULT 'manual', -- manual | rakuten | ...
   external_id   VARCHAR(191) NULL,                     -- chave estável vinda da rede, para atualizar sem duplicar
-  type          ENUM('code','deal') NOT NULL DEFAULT 'code', -- code = tem código; deal = oferta sem código
+  type          ENUM('code','deal') NOT NULL DEFAULT 'code', -- code = tem código, deal = oferta sem código
   title         VARCHAR(255) NOT NULL,
   description   TEXT NULL,
   code          VARCHAR(80) NULL,

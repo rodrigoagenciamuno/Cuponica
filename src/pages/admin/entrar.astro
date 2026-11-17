@@ -1,0 +1,26 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { adminConfigured, isAdmin, login } from '../../lib/auth';
+
+if (isAdmin(Astro.cookies)) return Astro.redirect('/admin');
+let error: string | null = null;
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (login(Astro.cookies, String(form.get('password') || ''), Astro.url.protocol === 'https:')) return Astro.redirect('/admin');
+  await new Promise((r) => setTimeout(r, 800)); // freia tentativas em sequência
+  error = 'Senha incorreta.';
+}
+---
+<Admin title="Entrar" error={error}>
+  <div class="card" style="max-width:420px;margin:40px auto">
+    <h1>Painel Cuponica</h1>
+    {adminConfigured() ? (
+      <form method="post" style="display:grid;gap:14px">
+        <label>Senha<input type="password" name="password" autofocus required autocomplete="current-password" /></label>
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+    ) : (
+      <p class="muted">Defina a variável de ambiente <code>ADMIN_PASSWORD</code> no painel da Hostinger para ativar o acesso.</p>
+    )}
+  </div>
+</Admin>

@@ -1,0 +1,74 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import NoDb from '../../components/NoDb.astro';
+import { hasDatabase } from '../../lib/db';
+import { dashboard } from '../../lib/admin';
+
+const db = hasDatabase();
+let data: Awaited<ReturnType<typeof dashboard>> | null = null;
+let error: string | null = null;
+if (db) {
+  try { data = await dashboard(); } catch (e: any) { error = `Erro ao consultar o banco: ${e?.message || e}`; }
+}
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const n = new Intl.NumberFormat('pt-BR');
+---
+<Admin title="Resumo" error={error}>
+  <h1>Resumo</h1>
+  {!db && <NoDb />}
+  {data && (
+    <>
+      <div class="kpis">
+        <div class="kpi"><b>{n.format(data.kpi.stores)}</b><span>lojas ativas</span></div>
+        <div class="kpi"><b>{n.format(data.kpi.coupons)}</b><span>cupons válidos</span></div>
+        <div class="kpi"><b>{n.format(data.kpi.clicks_1d)}</b><span>cliques nas últimas 24h</span></div>
+        <div class="kpi"><b>{n.format(data.kpi.clicks_30d)}</b><span>cliques em 30 dias</span></div>
+        <div class="kpi"><b>{n.format(data.kpi.sales_30d)}</b><span>vendas em 30 dias</span></div>
+        <div class="kpi"><b>{brl.format(Number(data.kpi.commission_30d))}</b><span>comissão em 30 dias</span></div>
+      </div>
+
+      <h2>Lojas com mais cliques (30 dias)</h2>
+      <table>
+        <thead><tr><th>Loja</th><th class="n">Cliques</th><th class="n">Vendas</th><th class="n">Comissão</th><th class="n">Conversão</th></tr></thead>
+        <tbody>
+          {data.topStores.length === 0 && <tr><td colspan="5" class="muted">Nenhum clique registrado ainda.</td></tr>}
+          {data.topStores.map((s: any) => (
+            <tr>
+              <td><a href={`/admin/lojas/${s.id}`}>{s.name}</a></td>
+              <td class="n">{n.format(s.clicks)}</td>
+              <td class="n">{n.format(s.sales)}</td>
+              <td class="n">{brl.format(Number(s.commission))}</td>
+              <td class="n">{s.clicks ? ((s.sales / s.clicks) * 100).toFixed(1) + '%' : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Cupons com mais cliques (30 dias)</h2>
+      <table>
+        <thead><tr><th>Cupom</th><th>Loja</th><th class="n">Cliques</th></tr></thead>
+        <tbody>
+          {data.topCoupons.length === 0 && <tr><td colspan="3" class="muted">Nenhum clique registrado ainda.</td></tr>}
+          {data.topCoupons.map((c: any) => (
+            <tr><td><a href={`/admin/cupons/${c.id}`}>{c.title}</a></td><td>{c.store}</td><td class="n">{n.format(c.clicks)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px">
+        <div>
+          <h2>Páginas que mais geram cliques</h2>
+          <table><thead><tr><th>Página</th><th class="n">Cliques</th></tr></thead><tbody>
+            {data.topPages.map((p: any) => <tr><td><a href={p.page_path} target="_blank">{p.page_path}</a></td><td class="n">{n.format(p.clicks)}</td></tr>)}
+          </tbody></table>
+        </div>
+        <div>
+          <h2>Origem dos visitantes que clicaram</h2>
+          <table><thead><tr><th>Origem</th><th class="n">Cliques</th></tr></thead><tbody>
+            {data.topSources.map((s: any) => <tr><td>{s.source}</td><td class="n">{n.format(s.clicks)}</td></tr>)}
+          </tbody></table>
+        </div>
+      </div>
+    </>
+  )}
+</Admin>

@@ -1,0 +1,58 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import NoDb from '../../../components/NoDb.astro';
+import { hasDatabase } from '../../../lib/db';
+import { listCoupons, listStores } from '../../../lib/admin';
+
+const sp = Astro.url.searchParams;
+const storeId = Number(sp.get('loja')) || undefined;
+const status = sp.get('status') || 'ativos';
+const q = sp.get('q') || '';
+const db = hasDatabase();
+const [coupons, stores] = db ? await Promise.all([listCoupons({ storeId, status, search: q }), listStores()]) : [[], []];
+const fmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' });
+const flash = sp.get('ok') ? 'Cupom salvo.' : null;
+---
+<Admin title="Cupons" flash={flash}>
+  <div class="between">
+    <h1 style="margin:0">Cupons</h1>
+    <a class="btn" href={`/admin/cupons/novo${storeId ? `?loja=${storeId}` : ''}`}>+ Novo cupom</a>
+  </div>
+  {!db ? <NoDb /> : (
+    <>
+      <form method="get" class="row card" style="padding:14px">
+        <select name="loja" style="max-width:260px">
+          <option value="">Todas as lojas</option>
+          {stores.map((s: any) => <option value={s.id} selected={s.id === storeId}>{s.name}</option>)}
+        </select>
+        <select name="status" style="max-width:180px">
+          {[['ativos', 'Válidos'], ['expirados', 'Expirados'], ['inativos', 'Desativados'], ['todos', 'Todos']].map(([v, l]) => <option value={v} selected={status === v}>{l}</option>)}
+        </select>
+        <input type="search" name="q" value={q} placeholder="Título ou código" style="max-width:240px" />
+        <button class="btn ghost" type="submit">Filtrar</button>
+      </form>
+      <table>
+        <thead><tr><th>Cupom</th><th>Loja</th><th>Código</th><th>Validade</th><th>Origem</th><th class="n">Cliques 30d</th></tr></thead>
+        <tbody>
+          {coupons.length === 0 && <tr><td colspan="6" class="muted">Nenhum cupom com esses filtros.</td></tr>}
+          {coupons.map((c: any) => (
+            <tr>
+              <td><a href={`/admin/cupons/${c.id}`}><b>{c.title}</b></a>
+                <div class="row" style="gap:6px;margin-top:4px">
+                  {c.discount_label && <span class="pill">{c.discount_label}</span>}
+                  {c.verified ? <span class="pill on">verificado</span> : null}
+                  {c.exclusive ? <span class="pill on">exclusivo</span> : null}
+                  {!c.active && <span class="pill off">desativado</span>}
+                </div></td>
+              <td><a href={`/admin/lojas/${c.store_id}`}>{c.store_name}</a></td>
+              <td><code>{c.code || '—'}</code></td>
+              <td>{c.expires_at ? fmt.format(new Date(c.expires_at)) : 'sem data'}</td>
+              <td>{c.source}</td>
+              <td class="n">{c.clicks_30d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )}
+</Admin>

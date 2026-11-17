@@ -1,0 +1,61 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { hasDatabase } from '../../../lib/db';
+import { getCouponAdmin, listStores, saveCoupon, utcToBrInput } from '../../../lib/admin';
+
+if (!hasDatabase()) return Astro.rewrite('/admin/cupons');
+const isNew = Astro.params.id === 'novo';
+const id = isNew ? null : Number(Astro.params.id);
+let error: string | null = null;
+let c: any = isNew
+  ? { store_id: Number(Astro.url.searchParams.get('loja')) || null, type: 'code', active: 1, verified: 0, exclusive: 0, priority: 0, source: 'manual' }
+  : await getCouponAdmin(id!);
+if (!c) return Astro.redirect('/admin/cupons');
+let expiresInput = utcToBrInput(c.expires_at);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const res = await saveCoupon(id, form);
+  if ('id' in res) return Astro.redirect(`/admin/cupons/${res.id}?ok=1`);
+  error = res.error;
+  c = { ...c, ...Object.fromEntries(form), store_id: Number(form.get('store_id')), verified: form.get('verified') ? 1 : 0, exclusive: form.get('exclusive') ? 1 : 0, active: form.get('active') ? 1 : 0 };
+  expiresInput = String(form.get('expires_at') || '');
+}
+const stores = await listStores();
+const store = stores.find((s: any) => s.id === c.store_id);
+const flash = Astro.url.searchParams.get('ok') ? 'Cupom salvo.' : null;
+const fromNetwork = c.source && c.source !== 'manual';
+---
+<Admin title={isNew ? 'Novo cupom' : c.title} flash={flash} error={error}>
+  <div class="between">
+    <h1 style="margin:0">{isNew ? 'Novo cupom' : 'Editar cupom'}</h1>
+    {store && <a class="btn ghost" href={`/cupom-desconto/${store.slug}#cupom-${c.id}`} target="_blank">Ver na página da loja ↗</a>}
+  </div>
+  {fromNetwork && <div class="card muted" style="padding:12px 16px">Este cupom veio da <b>{c.source}</b>. A próxima sincronização sobrescreve título, descrição, código e validade. Destaque, verificado, exclusivo e prioridade são mantidos.</div>}
+  <form method="post" class="grid card">
+    <label>Loja
+      <select name="store_id" required>
+        <option value="">Escolha…</option>
+        {stores.map((s: any) => <option value={s.id} selected={s.id === c.store_id}>{s.name}</option>)}
+      </select></label>
+    <label>Tipo
+      <select name="type">
+        <option value="code" selected={c.type === 'code'}>Cupom com código</option>
+        <option value="deal" selected={c.type === 'deal'}>Oferta (sem código)</option>
+      </select></label>
+    <label class="full">Título <small>Ex.: 15% OFF em toda a loja</small><input type="text" name="title" value={c.title} required maxlength="255" /></label>
+    <label class="full">Regras / descrição<textarea name="description" rows="3">{c.description}</textarea></label>
+    <label>Código<input type="text" name="code" value={c.code} style="font-family:monospace;text-transform:uppercase" /></label>
+    <label>Selo de desconto <small>Ex.: 15% OFF, R$ 50, Frete grátis</small><input type="text" name="discount_label" value={c.discount_label} maxlength="40" /></label>
+    <label>Válido até <small>horário de Brasília. Vazio = sem data</small><input type="datetime-local" name="expires_at" value={expiresInput} /></label>
+    <label>Prioridade <small>maior aparece primeiro</small><input type="number" name="priority" value={c.priority} /></label>
+    <label class="full">Link de afiliado <small>Se vazio, o sistema monta o deeplink pela rede + MID da loja</small><input type="url" name="tracking_url" value={c.tracking_url} /></label>
+    <label class="full">Página de destino na loja <small>Opcional: leva direto para uma página específica</small><input type="url" name="landing_url" value={c.landing_url} /></label>
+    <div class="full checks">
+      <label class="check"><input type="checkbox" name="verified" checked={!!c.verified} /> Verificado</label>
+      <label class="check"><input type="checkbox" name="exclusive" checked={!!c.exclusive} /> Exclusivo Cuponica</label>
+      <label class="check"><input type="checkbox" name="active" checked={!!c.active} /> Ativo (aparece no site)</label>
+    </div>
+    <div class="full row"><button class="btn" type="submit">Salvar cupom</button><a class="btn ghost" href={`/admin/cupons${c.store_id ? `?loja=${c.store_id}` : ''}`}>Voltar</a></div>
+  </form>
+</Admin>

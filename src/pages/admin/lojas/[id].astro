@@ -1,0 +1,67 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import NoDb from '../../../components/NoDb.astro';
+import { hasDatabase } from '../../../lib/db';
+import { getStoreAdmin, listCategories, saveStore } from '../../../lib/admin';
+import { faqToText } from '../../../lib/util';
+
+if (!hasDatabase()) return Astro.rewrite('/admin/lojas');
+const isNew = Astro.params.id === 'nova';
+const id = isNew ? null : Number(Astro.params.id);
+let error: string | null = null;
+let store: any = isNew ? { network: 'rakuten', active: 1, featured: 0, categories: [], faq_json: [] } : await getStoreAdmin(id!);
+if (!store) return Astro.redirect('/admin/lojas');
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const res = await saveStore(id, form);
+  if ('id' in res) return Astro.redirect(`/admin/lojas/${res.id}?ok=1`);
+  error = res.error;
+  store = { ...store, ...Object.fromEntries(form), categories: form.getAll('categories').map(Number), featured: form.get('featured') ? 1 : 0, active: form.get('active') ? 1 : 0, faqText: String(form.get('faq') || '') };
+}
+const categories = await listCategories();
+let faq: any[] = [];
+try { faq = typeof store.faq_json === 'string' ? JSON.parse(store.faq_json) : store.faq_json || []; } catch { faq = []; }
+const faqText = store.faqText ?? faqToText(faq);
+const flash = Astro.url.searchParams.get('ok') ? 'Loja salva. A página pública atualiza na hora.' : null;
+---
+<Admin title={isNew ? 'Nova loja' : store.name} flash={flash} error={error}>
+  <div class="between">
+    <h1 style="margin:0">{isNew ? 'Nova loja' : store.name}</h1>
+    {!isNew && (
+      <div class="row">
+        <a class="btn ghost" href={`/cupom-desconto/${store.slug}`} target="_blank">Ver página ↗</a>
+        <a class="btn ghost" href={`/admin/cupons?loja=${store.id}`}>Cupons desta loja</a>
+        <a class="btn" href={`/admin/cupons/novo?loja=${store.id}`}>+ Novo cupom</a>
+      </div>
+    )}
+  </div>
+  <form method="post" class="grid card">
+    <label>Nome da loja<input type="text" name="name" value={store.name} required /></label>
+    <label>Endereço da página <small>/cupom-desconto/<b>{store.slug || '…'}</b>. Evite mudar depois de publicada: perde posição no Google.</small>
+      <input type="text" name="slug" value={store.slug} placeholder="gerado a partir do nome" /></label>
+    <label>Site da loja<input type="url" name="website_url" value={store.website_url} placeholder="https://www.loja.com.br" /></label>
+    <label>Logo (URL da imagem)<input type="url" name="logo_url" value={store.logo_url} /></label>
+    <label>Rede de afiliados
+      <select name="network">
+        {['rakuten', 'awin', 'lomadee', 'admitad', 'direto'].map((n) => <option value={n} selected={store.network === n}>{n}</option>)}
+      </select></label>
+    <label>MID do anunciante <small>ID da loja na rede (Rakuten: MID)</small><input type="text" name="network_mid" value={store.network_mid} /></label>
+    <label class="full">Introdução <small>1 ou 2 frases no topo da página</small><input type="text" name="intro" value={store.intro} /></label>
+    <label class="full">Texto sobre a loja <small>Conteúdo próprio para SEO: como usar o cupom, trocas, entrega, dicas. Quanto mais original, melhor.</small>
+      <textarea name="about" rows="8">{store.about}</textarea></label>
+    <label class="full">Perguntas frequentes <small>Uma por bloco, separadas por linha em branco. Formato: <code>P: pergunta</code> na primeira linha e <code>R: resposta</code> na segunda.</small>
+      <textarea name="faq" rows="8" placeholder={'P: Como usar o cupom?\nR: Copie o código e cole no carrinho.\n\nP: O cupom vale no app?\nR: Sim, na maioria dos casos.'}>{faqText}</textarea></label>
+    <div class="full">
+      <div style="font-size:.86rem;font-weight:600;margin-bottom:8px">Categorias</div>
+      <div class="checks">
+        {categories.map((c: any) => <label class="check"><input type="checkbox" name="categories" value={c.id} checked={store.categories.includes(c.id)} /> {c.name}</label>)}
+      </div>
+    </div>
+    <div class="full checks">
+      <label class="check"><input type="checkbox" name="featured" checked={!!store.featured} /> Destaque na home</label>
+      <label class="check"><input type="checkbox" name="active" checked={!!store.active} /> Loja ativa (aparece no site)</label>
+    </div>
+    <div class="full row"><button class="btn" type="submit">Salvar loja</button><a class="btn ghost" href="/admin/lojas">Voltar</a></div>
+  </form>
+</Admin>

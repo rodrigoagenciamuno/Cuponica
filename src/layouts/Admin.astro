@@ -1,0 +1,87 @@
+---
+interface Props { title: string; flash?: string | null; error?: string | null }
+const { title, flash, error } = Astro.props;
+const path = Astro.url.pathname;
+const nav = [
+  ['/admin', 'Resumo'],
+  ['/admin/lojas', 'Lojas'],
+  ['/admin/cupons', 'Cupons'],
+  ['/admin/categorias', 'Categorias'],
+];
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{title} · Admin Cuponica</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style is:global>
+    :root { --ink:#17151f; --muted:#6b6878; --line:#e4e1ea; --bg:#f6f5f9; --brand:#ff5a1f; --ok:#1f8a4c; --bad:#c0392b; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); background: var(--bg); }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #17151f; color: #fff; }
+    header .in { max-width: 1200px; margin: 0 auto; padding: 0 20px; height: 56px; display: flex; align-items: center; gap: 28px; }
+    header a { color: #cfcbe0; text-decoration: none; font-size: .95rem; }
+    header a.on, header a:hover { color: #fff; }
+    header .logo { color: #fff; font-weight: 800; margin-right: 8px; }
+    header .logo span { color: var(--brand); }
+    header .right { margin-left: auto; display: flex; gap: 18px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 28px 20px 60px; }
+    h1 { font-size: 1.6rem; margin: 0 0 18px; }
+    h2 { font-size: 1.1rem; margin: 26px 0 12px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 18px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .kpi b { display: block; font-size: 1.7rem; }
+    .kpi span { color: var(--muted); font-size: .85rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; font-size: .92rem; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: #fbfafd; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    a { color: #3d2fd1; }
+    .btn { display: inline-block; background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: .93rem; cursor: pointer; text-decoration: none; }
+    .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    .btn.danger { background: #fff; color: var(--bad); border: 1px solid #f0c9c4; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    form.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+    form.grid .full { grid-column: 1 / -1; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: .86rem; font-weight: 600; }
+    label small { font-weight: 400; color: var(--muted); }
+    input[type=text], input[type=url], input[type=number], input[type=password], input[type=datetime-local], input[type=search], select, textarea { font: inherit; font-weight: 400; padding: 9px 11px; border: 1px solid #cfcbd9; border-radius: 8px; background: #fff; width: 100%; }
+    textarea { min-height: 110px; resize: vertical; }
+    .check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
+    .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .flash { background: #e6f5ec; color: var(--ok); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-weight: 600; }
+    .error { background: #fbeceb; color: var(--bad); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-weight: 600; }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: .76rem; font-weight: 700; background: #eee; color: #555; }
+    .pill.on { background: #e6f5ec; color: var(--ok); }
+    .pill.off { background: #fbeceb; color: var(--bad); }
+    .muted { color: var(--muted); }
+    @media (max-width: 760px) { form.grid { grid-template-columns: 1fr; } header .in { gap: 14px; overflow-x: auto; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="in">
+      <a class="logo" href="/admin">Cupon<span>ica</span></a>
+      {path !== '/admin/entrar' && nav.map(([href, label]) => (
+        <a href={href} class:list={{ on: href === '/admin' ? path === '/admin' : path.startsWith(href) }}>{label}</a>
+      ))}
+      {path !== '/admin/entrar' && (
+        <div class="right">
+          <a href="/" target="_blank">Ver site ↗</a>
+          <a href="/admin/sair">Sair</a>
+        </div>
+      )}
+    </div>
+  </header>
+  <main>
+    {flash && <div class="flash">{flash}</div>}
+    {error && <div class="error">{error}</div>}
+    <slot />
+  </main>
+</body>
+</html>

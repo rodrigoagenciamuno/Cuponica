@@ -38,7 +38,7 @@ const goStore = `/ir/loja/${store.slug}?p=${encodeURIComponent(path)}`;
       <h1>Cupom de desconto {store.name}</h1>
       {store.intro && <p class="muted">{store.intro}</p>}
     </div>
-    <a class="btn btn-ghost" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>
+    {store.website_url && <a class="btn btn-ghost" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
   </div>
 
   <div class="store-layout">

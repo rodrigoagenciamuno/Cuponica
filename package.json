@@ -6,9 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "start": "node ./dist/server/entry.mjs",
-    "preview": "astro preview",
-    "db:migrate": "node scripts/migrate.mjs",
-    "sync:cupons": "node scripts/sync-rakuten.mjs"
+    "preview": "astro preview"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.13",

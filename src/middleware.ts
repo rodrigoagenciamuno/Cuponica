@@ -1,14 +1,25 @@
 import { defineMiddleware } from 'astro:middleware';
+import { isAdmin } from './lib/auth';
 
-/**
- * Guarda a origem do visitante (UTM e referrer externo) em um cookie de sessão,
- * sem JavaScript no navegador. Quando ele clicar em um cupom, o /ir/ lê esse
- * cookie e grava a origem junto com o clique.
- */
 export const onRequest = defineMiddleware(async (ctx, next) => {
   const url = ctx.url;
-  const isPage = !url.pathname.startsWith('/ir/') && !url.pathname.includes('.');
+  const path = url.pathname;
 
+  /* ---------- Painel admin: exige login ---------- */
+  if (path === '/admin' || path.startsWith('/admin/')) {
+    if (path !== '/admin/entrar' && !isAdmin(ctx.cookies)) {
+      return ctx.redirect('/admin/entrar', 302);
+    }
+    const res = await next();
+    res.headers.set('Cache-Control', 'no-store');
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return res;
+  }
+
+  /* ---------- Páginas públicas: guarda a origem do visitante ----------
+     UTM e referrer externo ficam num cookie (sem JavaScript no navegador).
+     Quando ele clicar em um cupom, o /ir/ grava essa origem junto com o clique. */
+  const isPage = !path.startsWith('/ir/') && !path.startsWith('/api/') && !path.includes('.');
   if (isPage) {
     const utm = {
       s: url.searchParams.get('utm_source'),

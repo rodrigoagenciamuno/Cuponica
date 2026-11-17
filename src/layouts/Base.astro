@@ -75,8 +75,8 @@ const orgSchema = {
       </div>
     </footer>
     <script is:inline>
-      // Único JavaScript do site: revela e copia o código quando o visitante clica em "Ver cupom".
-      // O link abre a loja em nova aba (via /ir/, com tracking) e esta aba mostra o código.
+      /* Único JavaScript do site: revela e copia o código quando o visitante clica em "Ver cupom".
+         O link abre a loja em nova aba (via /ir/, com tracking) e esta aba mostra o código. */
       document.addEventListener('click', function (e) {
         var a = e.target.closest && e.target.closest('[data-reveal]');
         if (!a) return;

@@ -1,0 +1,38 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import NoDb from '../../../components/NoDb.astro';
+import { hasDatabase } from '../../../lib/db';
+import { listStores } from '../../../lib/admin';
+
+const q = Astro.url.searchParams.get('q') || '';
+const stores = hasDatabase() ? await listStores(q) : [];
+const flash = Astro.url.searchParams.get('ok') ? 'Loja salva.' : null;
+---
+<Admin title="Lojas" flash={flash}>
+  <div class="between">
+    <h1 style="margin:0">Lojas</h1>
+    <div class="row">
+      <form method="get" class="row"><input type="search" name="q" value={q} placeholder="Buscar loja" /></form>
+      <a class="btn" href="/admin/lojas/nova">+ Nova loja</a>
+    </div>
+  </div>
+  {!hasDatabase() ? <NoDb /> : (
+    <table>
+      <thead><tr><th>Loja</th><th>Endereço</th><th>Rede / MID</th><th class="n">Cupons válidos</th><th class="n">Cliques 30d</th><th>Status</th></tr></thead>
+      <tbody>
+        {stores.length === 0 && <tr><td colspan="6" class="muted">Nenhuma loja cadastrada. As lojas da Rakuten aparecem aqui automaticamente depois da primeira sincronização.</td></tr>}
+        {stores.map((s: any) => (
+          <tr>
+            <td><a href={`/admin/lojas/${s.id}`}><b>{s.name}</b></a> {s.featured ? <span class="pill on">destaque</span> : null}
+              {!s.about && <div class="muted" style="font-size:.8rem">sem texto de SEO</div>}</td>
+            <td><a href={`/cupom-desconto/${s.slug}`} target="_blank">/cupom-desconto/{s.slug}</a></td>
+            <td>{s.network}{s.network_mid ? ` · ${s.network_mid}` : ''}</td>
+            <td class="n"><a href={`/admin/cupons?loja=${s.id}`}>{s.active_coupons}</a></td>
+            <td class="n">{s.clicks_30d}</td>
+            <td>{s.active ? <span class="pill on">ativa</span> : <span class="pill off">inativa</span>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</Admin>

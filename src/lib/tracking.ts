@@ -48,7 +48,7 @@ export function buildAffiliateUrl(store: Store, coupon: Coupon | undefined, clic
     return url.toString();
   }
 
-  return destination;
+  return destination || '/';
 }
 
 export type ClickInfo = {

@@ -1,0 +1,50 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import NoDb from '../../../components/NoDb.astro';
+import { hasDatabase } from '../../../lib/db';
+import { listCategories, saveCategory } from '../../../lib/admin';
+
+const db = hasDatabase();
+let error: string | null = null;
+let flash: string | null = null;
+if (db && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = Number(form.get('id')) || null;
+  const res = await saveCategory(id, form);
+  if ('error' in res) error = res.error; else flash = 'Categoria salva.';
+}
+const categories = db ? await listCategories() : [];
+---
+<Admin title="Categorias" flash={flash} error={error}>
+  <h1>Categorias</h1>
+  {!db ? <NoDb /> : (
+    <>
+      <table>
+        <thead><tr><th>Nome</th><th>Endereço</th><th>Introdução</th><th class="n">Lojas</th><th></th></tr></thead>
+        <tbody>
+          {categories.map((c: any) => (
+            <tr>
+              <td colspan="5" style="padding:0">
+                <form method="post" class="row" style="padding:8px 12px;flex-wrap:nowrap">
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="text" name="name" value={c.name} style="max-width:180px" />
+                  <input type="text" name="slug" value={c.slug} style="max-width:160px" title="Endereço: /categoria/..." />
+                  <input type="text" name="intro" value={c.intro} />
+                  <span class="muted" style="min-width:60px;text-align:right">{c.stores} lojas</span>
+                  <button class="btn ghost" type="submit">Salvar</button>
+                  <a href={`/categoria/${c.slug}`} target="_blank">ver</a>
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h2>Nova categoria</h2>
+      <form method="post" class="row card">
+        <input type="text" name="name" placeholder="Nome" required style="max-width:220px" />
+        <input type="text" name="intro" placeholder="Introdução (1 frase)" />
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+    </>
+  )}
+</Admin>

@@ -15,30 +15,23 @@ Astro (HTML renderizado no servidor, quase sem JavaScript) + Node.js + MySQL, ho
 | `src/pages/ir/loja/[slug].ts` | Mesmo fluxo para o botão "Ir para a loja" |
 | `src/middleware.ts` | Guarda UTM e referrer de quem chega (cookie), para gravar junto com o clique |
 | `src/pages/robots.txt.ts`, `sitemap.xml.ts` | Robots (bloqueia `/ir/`) e sitemap dinâmico |
-| `sql/schema.sql` | Tabelas: lojas, categorias, cupons, cliques, conversões |
-| `scripts/sync-rakuten.mjs` | Importa cupons da API da Rakuten (Cron) |
-| `scripts/sync-conversoes.mjs` | Importa vendas/comissões e liga ao clique pelo `u1` (Cron) |
+| `src/pages/admin/` | Painel admin (`/admin`, protegido por `ADMIN_PASSWORD`): lojas, cupons, categorias e relatório de cliques |
+| `src/pages/api/cron/` | Endpoints de sincronização com a Rakuten, chamados pelo Cron Job (protegidos por `CRON_KEY`) |
+| `src/lib/rakuten.ts` | Integração Rakuten: cupons (Coupon Web Service) e vendas (Events API) |
+| `sql/schema.sql` | Tabelas. São criadas automaticamente na primeira conexão com o banco. |
 | `src/data/demo.json` | Dados **fictícios**, usados enquanto o MySQL não está configurado |
 
 ## Hostinger (app Node.js)
 
-- **Comando de build:** `npm run build`
-- **Arquivo/Comando de início:** `npm start` (executa `dist/server/entry.mjs`)
-- **Node.js:** 22.x ou 24.x
-- **Variáveis de ambiente:** ver `.env.example`
+- **Build:** `npm run build` · **Início:** `npm start` · **Node.js:** 22.x ou 24.x
+- **Variáveis de ambiente:** ver `.env.example`. As tabelas do banco são criadas sozinhas.
+- Cada push no branch `main` gera um novo deploy automaticamente.
 
-Depois de criar o banco MySQL no hPanel e cadastrar as variáveis, rodar uma vez:
-
-```
-npm run db:migrate            # cria as tabelas
-npm run db:migrate -- --demo  # opcional: carrega os dados fictícios
-```
-
-Cron Jobs sugeridos (hPanel):
+Cron Jobs (hPanel → Avançado → Cron Jobs), comando personalizado:
 
 ```
-0 */2 * * *   npm run sync:cupons                 # cupons a cada 2 horas
-30 4 * * *    node scripts/sync-conversoes.mjs 30 # conversões 1x por dia
+curl -s "https://cuponica.com.br/api/cron/sync-cupons?key=SUA_CRON_KEY"             # a cada 2 horas
+curl -s "https://cuponica.com.br/api/cron/sync-conversoes?key=SUA_CRON_KEY&dias=30"  # 1x por dia
 ```
 
 ## Regras de SEO e tracking
