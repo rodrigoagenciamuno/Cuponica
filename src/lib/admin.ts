@@ -72,18 +72,18 @@ export async function saveStore(id: number | null, form: FormData): Promise<{ id
 
   const values = [
     slug, name, str(form.get('website_url')), str(form.get('network')) || 'rakuten', nul(str(form.get('network_mid'))),
-    nul(str(form.get('logo_url'))), nul(str(form.get('intro'))), nul(str(form.get('about'))),
+    nul(str(form.get('logo_url'))), nul(/^#[0-9a-f]{6}$/i.test(str(form.get('brand_color'))) ? str(form.get('brand_color')) : ''), nul(str(form.get('intro'))), nul(str(form.get('about'))),
     JSON.stringify(faqFromText(str(form.get('faq')))), bool(form.get('featured')), bool(form.get('active')),
   ];
   try {
     if (id) {
       await exec(
-        `UPDATE stores SET slug=?, name=?, website_url=?, network=?, network_mid=?, logo_url=?, intro=?, about=?, faq_json=?, featured=?, active=? WHERE id=?`,
+        `UPDATE stores SET slug=?, name=?, website_url=?, network=?, network_mid=?, logo_url=?, brand_color=?, intro=?, about=?, faq_json=?, featured=?, active=? WHERE id=?`,
         [...values, id],
       );
     } else {
       const r = await exec(
-        `INSERT INTO stores (slug, name, website_url, network, network_mid, logo_url, intro, about, faq_json, featured, active) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        `INSERT INTO stores (slug, name, website_url, network, network_mid, logo_url, brand_color, intro, about, faq_json, featured, active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
         values,
       );
       id = r.insertId;

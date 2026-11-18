@@ -1,4 +1,8 @@
 ---
+import '@fontsource-variable/bricolage-grotesque/wght.css';
+import '@fontsource/instrument-sans/latin-400.css';
+import '@fontsource/instrument-sans/latin-600.css';
+import '@fontsource/instrument-sans/latin-700.css';
 import '../styles/global.css';
 
 interface Props {
@@ -9,9 +13,20 @@ interface Props {
   noindex?: boolean;
   jsonLd?: object | object[];
   ogImage?: string;
+  /** Item do menu a marcar como atual. */
+  section?: string;
+  /** Texto já digitado na busca do cabeçalho. */
+  q?: string;
 }
 
-const { title, description, path, noindex = false, jsonLd, ogImage } = Astro.props;
+const { title, description, path, noindex = false, jsonLd, ogImage, section, q = '' } = Astro.props;
+const nav = [
+  ['/lojas', 'Lojas de A a Z'],
+  ['/categoria/moda', 'Moda'],
+  ['/categoria/eletronicos', 'Eletrônicos'],
+  ['/categoria/casa', 'Casa'],
+  ['/categoria/beleza', 'Beleza'],
+];
 const site = Astro.site!;
 const canonical = new URL(path ?? Astro.url.pathname, site).toString();
 const fullTitle = title.includes('Cuponica') ? title : `${title} | Cuponica`;
@@ -42,7 +57,7 @@ const orgSchema = {
     <meta property="og:url" content={canonical} />
     {ogImage && <meta property="og:image" content={new URL(ogImage, site).toString()} />}
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#ff5a1f" />
+    <meta name="theme-color" content="#16123a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
     {schemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
@@ -50,42 +65,63 @@ const orgSchema = {
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a class="logo" href="/">Cupon<span>ica</span></a>
+        <a class="logo" href="/" aria-label="Cuponica, página inicial">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 4h20a2 2 0 0 1 2 2v6a4 4 0 0 0 0 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a4 4 0 0 0 0-8V6a2 2 0 0 1 2-2z" fill="#ffe03d"/><path d="M12.5 21.5l7-11" stroke="#16123a" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="2.2" fill="#16123a"/><circle cx="20" cy="20" r="2.2" fill="#16123a"/></svg>
+          <span>cuponica</span>
+        </a>
+        <form class="head-search" action="/busca" method="get" role="search">
+          <label class="sr" for="busca-topo">Buscar loja</label>
+          <input id="busca-topo" type="search" name="q" value={q} placeholder="Buscar loja ou marca" autocomplete="off" />
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
+        </form>
         <nav class="nav" aria-label="Principal">
-          <a href="/lojas">Todas as lojas</a>
-          <a href="/categoria/moda">Moda</a>
-          <a href="/categoria/eletronicos">Eletrônicos</a>
-          <a href="/categoria/casa">Casa</a>
+          {nav.map(([href, label]) => <a href={href} aria-current={section === href ? 'page' : undefined}>{label}</a>)}
         </nav>
       </div>
     </header>
-    <main class="wrap">
+    <main>
       <slot />
     </main>
     <footer class="site-footer">
       <div class="wrap">
         <nav aria-label="Rodapé">
           <a href="/lojas">Lojas de A a Z</a>
-          <a href="/sobre">Sobre o Cuponica</a>
           <a href="/como-funciona">Como funciona</a>
+          <a href="/sobre">Sobre a Cuponica</a>
           <a href="/privacidade">Privacidade</a>
         </nav>
-        <p>O Cuponica pode receber comissão quando você compra por meio dos nossos links. Isso não altera o preço que você paga.</p>
         <p>© {new Date().getFullYear()} Cuponica</p>
+        <p>A Cuponica pode receber comissão quando você compra pelos nossos links. Isso não muda o preço que você paga.</p>
       </div>
     </footer>
+    <div class="toast" role="status" aria-live="polite"></div>
     <script is:inline>
-      /* Único JavaScript do site: revela e copia o código quando o visitante clica em "Ver cupom".
-         O link abre a loja em nova aba (via /ir/, com tracking) e esta aba mostra o código. */
-      document.addEventListener('click', function (e) {
-        var a = e.target.closest && e.target.closest('[data-reveal]');
-        if (!a) return;
-        var card = a.closest('.coupon');
-        if (!card) return;
-        card.classList.add('revealed');
-        var code = card.querySelector('.code-box');
-        if (code && navigator.clipboard) navigator.clipboard.writeText(code.dataset.code || '').catch(function () {});
-      });
+      /* Único JavaScript do site. "Pegar cupom" abre a loja em nova aba (via /ir/, com tracking)
+         e nesta aba revela e copia o código. */
+      (function () {
+        var toast = document.querySelector('.toast'), t;
+        function say(msg) {
+          if (!toast) return;
+          toast.textContent = msg; toast.classList.add('show');
+          clearTimeout(t); t = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+        }
+        function copy(code, card) {
+          var status = card && card.querySelector('.code-status');
+          var done = function () { if (status) status.textContent = 'Código copiado. Cole no carrinho da loja.'; say('Código ' + code + ' copiado'); };
+          if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () { if (status) status.textContent = 'Selecione o código e copie.'; });
+          else if (status) status.textContent = 'Selecione o código e copie.';
+        }
+        document.addEventListener('click', function (e) {
+          var el = e.target.closest && e.target.closest('[data-reveal], [data-copy]');
+          if (!el) return;
+          var card = el.closest('.ticket');
+          if (el.hasAttribute('data-copy')) return copy(el.getAttribute('data-copy'), card);
+          if (!card) return;
+          card.classList.add('revealed');
+          var btn = card.querySelector('[data-copy]');
+          if (btn) { copy(btn.getAttribute('data-copy'), card); btn.focus({ preventScroll: true }); }
+        });
+      })();
     </script>
   </body>
 </html>

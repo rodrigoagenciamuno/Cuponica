@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS stores (
   network       VARCHAR(30)  NOT NULL DEFAULT 'rakuten', -- rakuten | awin | lomadee | ...
   network_mid   VARCHAR(40)  NULL,                    -- ID do anunciante na rede (MID na Rakuten)
   logo_url      VARCHAR(500) NULL,
+  brand_color   VARCHAR(9) NULL,                      -- cor da marca em hex (#E4572E), usada no topo da página da loja
   intro         TEXT NULL,                            -- texto editorial curto (topo da página)
   about         MEDIUMTEXT NULL,                      -- texto editorial longo (SEO)
   faq_json      JSON NULL,                            -- [{"q": "...", "a": "..."}]

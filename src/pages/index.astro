@@ -1,16 +1,46 @@
 ---
 import Base from '../layouts/Base.astro';
 import CouponCard from '../components/CouponCard.astro';
+import StoreLogo from '../components/StoreLogo.astro';
 import { getFeaturedCoupons, getStores, getCategories } from '../lib/data';
 import { monthYear } from '../lib/seo';
+import { daysLeft, expiryInfo, plural } from '../lib/ui';
 
-const [coupons, stores, categories] = await Promise.all([getFeaturedCoupons(10), getStores(), getCategories()]);
-const featuredStores = stores.filter((s) => s.featured);
+const [all, stores, categories] = await Promise.all([getFeaturedCoupons(60), getStores(), getCategories()]);
+// Faixa de lojas: destaques primeiro, completando com as que têm mais cupons.
+const stripStores = [...stores]
+  .filter((s) => (s.active_coupons ?? 0) > 0)
+  .sort((a, b) => Number(b.featured) - Number(a.featured) || (b.active_coupons ?? 0) - (a.active_coupons ?? 0))
+  .slice(0, 12);
+
+// Leque do topo: os três melhores cupons com código, de lojas diferentes.
+const fan: typeof all = [];
+for (const c of all) {
+  if (fan.length === 3) break;
+  if (c.type === 'code' && !fan.some((f) => f.store_id === c.store_id)) fan.push(c);
+}
+// Cupons de hoje: os melhores códigos e as melhores ofertas, misturados por prioridade.
+const today = [
+  ...all.filter((c) => c.type === 'code').slice(0, 11),
+  ...all.filter((c) => c.type === 'deal').slice(0, 5),
+].sort((a, b) => b.priority - a.priority);
+const codes = today.filter((c) => c.type === 'code').length;
+const ending = all
+  .filter((c) => c.expires_at && daysLeft(c.expires_at) <= 3)
+  .sort((a, b) => a.expires_at!.getTime() - b.expires_at!.getTime())
+  .slice(0, 6);
+const catCounts = new Map(categories.map((c) => [c.id, stores.filter((s) => s.categories.includes(c.id)).length]));
+
 const siteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Cuponica',
   url: Astro.site!.toString(),
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: new URL('/busca?q={q}', Astro.site!).toString().replace('%7Bq%7D', '{q}'),
+    'query-input': 'required name=q',
+  },
 };
 ---
 <Base
@@ -19,38 +49,99 @@ const siteSchema = {
   path="/"
   jsonLd={siteSchema}
 >
-  <div class="hero">
-    <h1>Cupons de desconto que funcionam</h1>
-    <p>Códigos e ofertas das melhores lojas online, verificados e atualizados todos os dias.</p>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Cupom que funciona, sem caça ao tesouro.</h1>
+        <p class="hero-lede">Códigos testados das lojas que você já usa. Pegou, colou no carrinho, economizou.</p>
+        <form class="big-search" action="/busca" method="get" role="search">
+          <label class="sr" for="busca-hero">Qual loja você procura?</label>
+          <input id="busca-hero" type="search" name="q" placeholder="Qual loja você procura?" autocomplete="off" />
+          <button class="btn" type="submit">Buscar</button>
+        </form>
+        <ul class="hero-stores" aria-label="Lojas populares">
+          {stripStores.slice(0, 5).map((s) => (
+            <li><a href={`/cupom-desconto/${s.slug}`}><StoreLogo store={s} />{s.name}</a></li>
+          ))}
+        </ul>
+      </div>
+      {fan.length === 3 && (
+        <div class="fan" aria-label="Melhores cupons de hoje">
+          {fan.map((c) => (
+            <a class="fan-item" href={`/cupom-desconto/${c.store.slug}#cupom-${c.id}`} aria-label={`${c.store.name}: ${c.title}`}>
+              <CouponCard coupon={c} store={c.store} compact />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <div class="wrap">
+    {stripStores.length > 0 && (
+      <nav class="store-strip" aria-label="Lojas em alta">
+        <ul>
+          {stripStores.map((s) => (
+            <li>
+              <a href={`/cupom-desconto/${s.slug}`}>
+                <StoreLogo store={s} />
+                <span><strong>{s.name}</strong><small>{s.best_label ? `até ${s.best_label}` : plural(s.active_coupons ?? 0, 'cupom', 'cupons')}</small></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+
+    <div class="home-grid section">
+      <section class="filter-scope" aria-labelledby="h-hoje">
+        <div class="section-head">
+          <h2 id="h-hoje">Cupons de hoje</h2>
+          <a href="/lojas">Ver todas as lojas</a>
+        </div>
+        <div class="filter" role="radiogroup" aria-label="Filtrar cupons">
+          <input type="radio" name="f-home" id="fh-all" class="f-all" checked /><label for="fh-all">Todos <span>{today.length}</span></label>
+          <input type="radio" name="f-home" id="fh-code" class="f-code" /><label for="fh-code">Com código <span>{codes}</span></label>
+          <input type="radio" name="f-home" id="fh-deal" class="f-deal" /><label for="fh-deal">Ofertas <span>{today.length - codes}</span></label>
+        </div>
+        <ul class="ticket-list">
+          {today.map((c) => <CouponCard coupon={c} store={c.store} showStore />)}
+        </ul>
+      </section>
+
+      <aside class="rail">
+        {ending.length > 0 && (
+          <div class="panel">
+            <h2>Terminam em breve</h2>
+            <ul class="ending">
+              {ending.map((c) => (
+                <li>
+                  <a href={`/cupom-desconto/${c.store.slug}#cupom-${c.id}`}>
+                    <StoreLogo store={c.store} />
+                    <span><strong>{c.title}</strong><small>{expiryInfo(c.expires_at, false).text}</small></span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div class="panel">
+          <h2>Categorias</h2>
+          <ul class="cat-list">
+            {categories.map((c) => (
+              <li><a href={`/categoria/${c.slug}`}>{c.name} <small>{catCounts.get(c.id)}</small></a></li>
+            ))}
+          </ul>
+        </div>
+        <div class="panel">
+          <h2>Como usar um cupom</h2>
+          <ol class="steps">
+            <li><span><strong>Clique em Pegar cupom</strong>A loja abre em outra aba e o código já fica copiado.</span></li>
+            <li><span><strong>Monte o carrinho</strong>Confira o valor mínimo e as regras na descrição.</span></li>
+            <li><span><strong>Cole o código</strong>No campo de cupom, antes de pagar.</span></li>
+          </ol>
+        </div>
+      </aside>
+    </div>
   </div>
-
-  <section>
-    <h2>Lojas em destaque</h2>
-    <ul class="store-grid">
-      {featuredStores.map((s) => (
-        <li>
-          <a class="store-tile" href={`/cupom-desconto/${s.slug}`}>
-            <strong>{s.name}</strong>
-            <small>{s.active_coupons} {s.active_coupons === 1 ? 'cupom ativo' : 'cupons ativos'}</small>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section>
-    <h2>Cupons em destaque hoje</h2>
-    <ul class="coupon-list">
-      {coupons.map((c) => <CouponCard coupon={c} store={c.store} showStore />)}
-    </ul>
-  </section>
-
-  <section>
-    <h2>Categorias</h2>
-    <ul class="store-grid">
-      {categories.map((c) => (
-        <li><a class="store-tile" href={`/categoria/${c.slug}`}><strong>{c.name}</strong></a></li>
-      ))}
-    </ul>
-  </section>
 </Base>

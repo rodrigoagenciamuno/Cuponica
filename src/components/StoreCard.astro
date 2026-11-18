@@ -1,0 +1,18 @@
+---
+import type { Store } from '../lib/data';
+import StoreLogo from './StoreLogo.astro';
+import { plural } from '../lib/ui';
+
+interface Props { store: Store }
+const { store } = Astro.props;
+const n = store.active_coupons ?? 0;
+---
+<li>
+  <a class="store-card" href={`/cupom-desconto/${store.slug}`}>
+    <StoreLogo store={store} size={48} />
+    <span>
+      <strong>{store.name}</strong>
+      <small>{n ? plural(n, 'cupom ativo', 'cupons ativos') : 'Sem cupons agora'}{store.best_label && <>, <em>até {store.best_label}</em></>}</small>
+    </span>
+  </a>
+</li>

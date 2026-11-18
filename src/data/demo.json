@@ -1,51 +1,162 @@
 {
-  "_aviso": "Dados FICTÍCIOS de demonstração. Usados só enquanto o banco MySQL não está configurado.",
+  "_aviso": "Lojas e cupons FICTÍCIOS de demonstração. Usados quando o banco não está configurado e carregáveis no banco pelo painel (/admin). Todas as lojas usam network = demo. expires_in_days é contado a partir do momento em que os dados são carregados (negativo = já expirado).",
   "categories": [
     { "id": 1, "slug": "moda", "name": "Moda", "intro": "Cupons de desconto em roupas, calçados e acessórios." },
     { "id": 2, "slug": "eletronicos", "name": "Eletrônicos", "intro": "Cupons para celulares, notebooks, games e tecnologia." },
     { "id": 3, "slug": "casa", "name": "Casa e Decoração", "intro": "Descontos em móveis, decoração e utilidades domésticas." },
-    { "id": 4, "slug": "viagens", "name": "Viagens", "intro": "Cupons de hotéis, passagens e pacotes de viagem." }
+    { "id": 4, "slug": "beleza", "name": "Beleza e Saúde", "intro": "Cupons de perfumaria, cosméticos e farmácia." },
+    { "id": 5, "slug": "viagens", "name": "Viagens", "intro": "Cupons de hotéis, passagens e pacotes de viagem." },
+    { "id": 6, "slug": "esportes", "name": "Esportes", "intro": "Cupons de artigos esportivos e suplementos." }
   ],
   "stores": [
     {
-      "id": 1, "slug": "loja-demo-moda", "name": "Loja Demo Moda", "website_url": "https://example.com/moda",
-      "network": "rakuten", "network_mid": "00001", "featured": 1, "categories": [1],
-      "intro": "Roupas e calçados com cupons atualizados todos os dias.",
-      "about": "A Loja Demo Moda é uma loja fictícia usada para demonstrar a página de loja do Cuponica. Aqui entra o texto editorial próprio de cada loja: como usar o cupom, política de troca, prazos de entrega e dicas para economizar.",
+      "id": 1, "slug": "vestra", "name": "Vestra", "brand_color": "#E4572E", "website_url": "https://example.com/vestra",
+      "network": "demo", "network_mid": "demo-01", "featured": 1, "categories": [1],
+      "intro": "Moda feminina e masculina com coleção nova toda semana.",
+      "about": "A Vestra é uma marca brasileira de moda casual que lança peças novas toda semana. Os cupons costumam valer para a coleção atual e, em alguns casos, para o outlet. Antes de finalizar, confira se o desconto apareceu no resumo do carrinho: alguns códigos têm valor mínimo de compra.",
       "faq": [
-        { "q": "Como usar o cupom da Loja Demo Moda?", "a": "Clique em \"Ver cupom\", copie o código e cole no campo de cupom no carrinho da loja." },
-        { "q": "O cupom vale para itens em promoção?", "a": "Depende da regra de cada cupom. As condições aparecem na descrição de cada oferta." }
+        { "q": "Como usar o cupom Vestra?", "a": "Clique em Pegar cupom, copie o código e cole no campo Cupom de desconto, na etapa do carrinho." },
+        { "q": "O cupom Vestra vale para o outlet?", "a": "Só quando a descrição do cupom diz isso. A maior parte dos códigos vale apenas para peças da coleção atual." },
+        { "q": "Posso usar dois cupons na mesma compra?", "a": "Não. A Vestra aceita um código por pedido." }
       ]
     },
     {
-      "id": 2, "slug": "tech-exemplo", "name": "Tech Exemplo", "website_url": "https://example.com/tech",
-      "network": "rakuten", "network_mid": "00002", "featured": 1, "categories": [2],
-      "intro": "Celulares, notebooks e acessórios com desconto.",
-      "about": "Loja fictícia de eletrônicos para demonstração.",
+      "id": 2, "slug": "pixelmania", "name": "Pixelmania", "brand_color": "#2D5BFF", "website_url": "https://example.com/pixelmania",
+      "network": "demo", "network_mid": "demo-02", "featured": 1, "categories": [2],
+      "intro": "Celulares, notebooks, games e acessórios.",
+      "about": "A Pixelmania vende eletrônicos de marcas nacionais e importadas, com entrega para todo o Brasil. Os melhores descontos aparecem em notebooks e consoles, geralmente com pagamento no Pix.",
+      "faq": [
+        { "q": "O cupom Pixelmania vale para pagamento parcelado?", "a": "Alguns sim. Os cupons que exigem Pix trazem essa condição na descrição." },
+        { "q": "A Pixelmania tem frete grátis?", "a": "Sim, em pedidos acima de R$ 299 para as regiões Sul e Sudeste." }
+      ]
+    },
+    {
+      "id": 3, "slug": "casa-nuvem", "name": "Casa Nuvem", "brand_color": "#3E8E7E", "website_url": "https://example.com/casa-nuvem",
+      "network": "demo", "network_mid": "demo-03", "featured": 1, "categories": [3],
+      "intro": "Móveis, cama, mesa e banho.",
+      "about": "A Casa Nuvem vende móveis e enxoval com montagem inclusa em várias capitais. Os cupons maiores valem para sofás e colchões, com valor mínimo de compra.",
+      "faq": [
+        { "q": "A montagem dos móveis é grátis?", "a": "Em capitais do Sul e Sudeste, sim. Nas demais cidades, o valor aparece antes do pagamento." }
+      ]
+    },
+    {
+      "id": 4, "slug": "bela-flor", "name": "Bela Flor", "brand_color": "#D6457F", "website_url": "https://example.com/bela-flor",
+      "network": "demo", "network_mid": "demo-04", "featured": 1, "categories": [4],
+      "intro": "Perfumes, maquiagem e skincare.",
+      "about": "A Bela Flor reúne perfumaria nacional e importada, maquiagem e cuidados com a pele. Costuma liberar amostras grátis em pedidos acima de R$ 150.",
+      "faq": [
+        { "q": "O cupom Bela Flor vale para perfumes importados?", "a": "Depende do cupom. Os que não valem para importados avisam na descrição." }
+      ]
+    },
+    {
+      "id": 5, "slug": "rota-leve", "name": "Rota Leve", "brand_color": "#0097A7", "website_url": "https://example.com/rota-leve",
+      "network": "demo", "network_mid": "demo-05", "featured": 1, "categories": [5],
+      "intro": "Hotéis, pousadas e pacotes no Brasil e no exterior.",
+      "about": "A Rota Leve é uma agência online de hotéis e pacotes. Os cupons valem para reservas pagas no site ou no app e são aplicados antes do pagamento.",
       "faq": []
     },
     {
-      "id": 3, "slug": "casa-modelo", "name": "Casa Modelo", "website_url": "https://example.com/casa",
-      "network": "rakuten", "network_mid": "00003", "featured": 1, "categories": [3],
-      "intro": "Móveis e decoração com cupons exclusivos.",
-      "about": "Loja fictícia de casa e decoração para demonstração.",
+      "id": 6, "slug": "folego", "name": "Fôlego", "brand_color": "#FF6B1A", "website_url": "https://example.com/folego",
+      "network": "demo", "network_mid": "demo-06", "featured": 1, "categories": [6, 1],
+      "intro": "Tênis, roupas de treino e suplementos.",
+      "about": "A Fôlego vende artigos esportivos para corrida, academia e ciclismo. Os cupons mais comuns valem para tênis de corrida e suplementos.",
+      "faq": [
+        { "q": "O cupom Fôlego vale para suplementos?", "a": "Só os cupons que citam suplementos na descrição." }
+      ]
+    },
+    {
+      "id": 7, "slug": "kinetica", "name": "Kinetica", "brand_color": "#7B3FF2", "website_url": "https://example.com/kinetica",
+      "network": "demo", "network_mid": "demo-07", "featured": 0, "categories": [1, 6],
+      "intro": "Tênis de estilo e de corrida.",
+      "about": "A Kinetica é especializada em tênis, com lançamentos de várias marcas e uma linha própria.",
       "faq": []
     },
     {
-      "id": 4, "slug": "viaje-teste", "name": "Viaje Teste", "website_url": "https://example.com/viagens",
-      "network": "rakuten", "network_mid": "00004", "featured": 0, "categories": [4],
-      "intro": "Hotéis e pacotes com desconto.",
-      "about": "Loja fictícia de viagens para demonstração.",
+      "id": 8, "slug": "voltz", "name": "Voltz", "brand_color": "#1F2937", "website_url": "https://example.com/voltz",
+      "network": "demo", "network_mid": "demo-08", "featured": 1, "categories": [2, 3],
+      "intro": "Eletrodomésticos e eletroportáteis.",
+      "about": "A Voltz vende geladeiras, fogões, air fryers e eletroportáteis. Os cupons maiores aparecem em datas comemorativas e na Black Friday.",
       "faq": []
+    },
+    {
+      "id": 9, "slug": "lar-e-lume", "name": "Lar & Lume", "brand_color": "#B7853A", "website_url": "https://example.com/lar-e-lume",
+      "network": "demo", "network_mid": "demo-09", "featured": 0, "categories": [3],
+      "intro": "Iluminação e decoração.",
+      "about": "A Lar & Lume vende luminárias, quadros e objetos de decoração.",
+      "faq": []
+    },
+    {
+      "id": 10, "slug": "farma-viva", "name": "Farma Viva", "brand_color": "#13A26B", "website_url": "https://example.com/farma-viva",
+      "network": "demo", "network_mid": "demo-10", "featured": 0, "categories": [4],
+      "intro": "Farmácia online com entrega no mesmo dia.",
+      "about": "A Farma Viva é uma farmácia online com entrega rápida nas capitais. Cupons não valem para medicamentos controlados.",
+      "faq": []
+    },
+    {
+      "id": 11, "slug": "trilha-hoteis", "name": "Trilha Hotéis", "brand_color": "#2F5D9E", "website_url": "https://example.com/trilha-hoteis",
+      "network": "demo", "network_mid": "demo-11", "featured": 0, "categories": [5],
+      "intro": "Rede de hotéis em destinos de natureza.",
+      "about": "A Trilha Hotéis tem hotéis em serras e praias do Brasil. Os cupons valem para reservas diretas no site.",
+      "faq": []
+    },
+    {
+      "id": 12, "slug": "mercadao-click", "name": "Mercadão Click", "brand_color": "#F2B705", "website_url": "https://example.com/mercadao-click",
+      "network": "demo", "network_mid": "demo-12", "featured": 1, "categories": [2, 3, 4],
+      "intro": "Marketplace com milhões de produtos.",
+      "about": "O Mercadão Click é um marketplace com vendedores de todo o Brasil. Os cupons podem valer só para produtos vendidos pelo próprio Mercadão Click: confira a descrição.",
+      "faq": [
+        { "q": "O cupom vale para qualquer vendedor?", "a": "Não. A maioria vale só para itens vendidos e entregues pelo Mercadão Click." }
+      ]
     }
   ],
   "coupons": [
-    { "id": 1, "store_id": 1, "type": "code", "title": "15% OFF em toda a loja", "description": "Válido para compras acima de R$ 199. Não cumulativo.", "code": "DEMO15", "discount_label": "15% OFF", "expires_at": "2027-12-31T23:59:00", "verified": 1, "exclusive": 1, "priority": 10 },
-    { "id": 2, "store_id": 1, "type": "deal", "title": "Frete grátis para Sul e Sudeste", "description": "Em pedidos acima de R$ 150.", "code": null, "discount_label": "Frete grátis", "expires_at": "2027-06-30T23:59:00", "verified": 1, "exclusive": 0, "priority": 5 },
-    { "id": 3, "store_id": 1, "type": "code", "title": "R$ 30 OFF na primeira compra", "description": "Somente para novos clientes.", "code": "BEMVINDO30", "discount_label": "R$ 30", "expires_at": "2025-01-31T23:59:00", "verified": 0, "exclusive": 0, "priority": 1 },
-    { "id": 4, "store_id": 2, "type": "code", "title": "10% OFF em notebooks", "description": "Exceto linha premium.", "code": "NOTE10", "discount_label": "10% OFF", "expires_at": "2027-03-31T23:59:00", "verified": 1, "exclusive": 0, "priority": 8 },
-    { "id": 5, "store_id": 2, "type": "deal", "title": "Até 40% OFF em acessórios", "description": "Fones, capas e carregadores.", "code": null, "discount_label": "40% OFF", "expires_at": null, "verified": 0, "exclusive": 0, "priority": 3 },
-    { "id": 6, "store_id": 3, "type": "code", "title": "R$ 100 OFF em sofás", "description": "Compras acima de R$ 1.500.", "code": "SOFA100", "discount_label": "R$ 100", "expires_at": "2027-05-31T23:59:00", "verified": 1, "exclusive": 1, "priority": 9 },
-    { "id": 7, "store_id": 4, "type": "deal", "title": "Hotéis com até 25% OFF", "description": "Reservas pelo app.", "code": null, "discount_label": "25% OFF", "expires_at": "2027-09-30T23:59:00", "verified": 0, "exclusive": 0, "priority": 4 }
+    { "id": 1, "store_id": 1, "type": "code", "title": "15% OFF em toda a coleção nova", "description": "Compras acima de R$ 199. Não vale para o outlet.", "code": "VESTRA15", "discount_label": "15% OFF", "expires_in_days": 12, "verified": 1, "exclusive": 1, "priority": 10 },
+    { "id": 2, "store_id": 1, "type": "code", "title": "R$ 50 OFF na primeira compra", "description": "Somente para novos clientes, acima de R$ 249.", "code": "OLAVESTRA", "discount_label": "R$ 50", "expires_in_days": 30, "verified": 1, "exclusive": 0, "priority": 8 },
+    { "id": 3, "store_id": 1, "type": "deal", "title": "Outlet com até 60% OFF", "description": "Peças de coleções anteriores.", "code": null, "discount_label": "60% OFF", "expires_in_days": null, "verified": 0, "exclusive": 0, "priority": 5 },
+    { "id": 4, "store_id": 1, "type": "deal", "title": "Frete grátis acima de R$ 150", "description": "Para Sul e Sudeste.", "code": null, "discount_label": "Frete grátis", "expires_in_days": 2, "verified": 1, "exclusive": 0, "priority": 4 },
+    { "id": 5, "store_id": 1, "type": "code", "title": "20% OFF em jeans", "description": "Válido para calças e jaquetas jeans.", "code": "JEANS20", "discount_label": "20% OFF", "expires_in_days": -6, "verified": 0, "exclusive": 0, "priority": 1 },
+
+    { "id": 6, "store_id": 2, "type": "code", "title": "10% OFF em notebooks no Pix", "description": "Exceto linha gamer premium. Limite de R$ 500 de desconto.", "code": "PIXNOTE10", "discount_label": "10% OFF", "expires_in_days": 5, "verified": 1, "exclusive": 1, "priority": 10 },
+    { "id": 7, "store_id": 2, "type": "code", "title": "R$ 200 OFF em consoles", "description": "Compras acima de R$ 3.000.", "code": "GAME200", "discount_label": "R$ 200", "expires_in_days": 1, "verified": 1, "exclusive": 0, "priority": 9 },
+    { "id": 8, "store_id": 2, "type": "deal", "title": "Até 40% OFF em fones e caixas de som", "description": "Seleção de áudio com preço reduzido.", "code": null, "discount_label": "40% OFF", "expires_in_days": 20, "verified": 0, "exclusive": 0, "priority": 6 },
+    { "id": 9, "store_id": 2, "type": "code", "title": "5% OFF em celulares", "description": "Para qualquer forma de pagamento.", "code": "CEL5", "discount_label": "5% OFF", "expires_in_days": 45, "verified": 1, "exclusive": 0, "priority": 4 },
+    { "id": 10, "store_id": 2, "type": "code", "title": "15% OFF em monitores", "description": "Campanha encerrada.", "code": "MONITOR15", "discount_label": "15% OFF", "expires_in_days": -3, "verified": 0, "exclusive": 0, "priority": 1 },
+
+    { "id": 11, "store_id": 3, "type": "code", "title": "R$ 300 OFF em sofás", "description": "Compras acima de R$ 2.500.", "code": "SOFA300", "discount_label": "R$ 300", "expires_in_days": 9, "verified": 1, "exclusive": 1, "priority": 9 },
+    { "id": 12, "store_id": 3, "type": "code", "title": "12% OFF em cama, mesa e banho", "description": "Sem valor mínimo.", "code": "NUVEM12", "discount_label": "12% OFF", "expires_in_days": 25, "verified": 1, "exclusive": 0, "priority": 7 },
+    { "id": 13, "store_id": 3, "type": "deal", "title": "Colchões com até 50% OFF", "description": "Modelos de molas e espuma.", "code": null, "discount_label": "50% OFF", "expires_in_days": 3, "verified": 0, "exclusive": 0, "priority": 6 },
+
+    { "id": 14, "store_id": 4, "type": "code", "title": "20% OFF em skincare", "description": "Marcas selecionadas. Acima de R$ 120.", "code": "PELE20", "discount_label": "20% OFF", "expires_in_days": 14, "verified": 1, "exclusive": 1, "priority": 9 },
+    { "id": 15, "store_id": 4, "type": "code", "title": "R$ 40 OFF em perfumes", "description": "Acima de R$ 299. Inclui importados.", "code": "CHEIRO40", "discount_label": "R$ 40", "expires_in_days": 2, "verified": 1, "exclusive": 0, "priority": 8 },
+    { "id": 16, "store_id": 4, "type": "deal", "title": "Leve 3, pague 2 em maquiagem", "description": "O item de menor valor sai de graça.", "code": null, "discount_label": "Leve 3 pague 2", "expires_in_days": 10, "verified": 0, "exclusive": 0, "priority": 5 },
+
+    { "id": 17, "store_id": 5, "type": "code", "title": "8% OFF em hotéis nacionais", "description": "Reservas pagas à vista.", "code": "VIAJA8", "discount_label": "8% OFF", "expires_in_days": 40, "verified": 1, "exclusive": 0, "priority": 7 },
+    { "id": 18, "store_id": 5, "type": "code", "title": "R$ 150 OFF em pacotes internacionais", "description": "Pacotes acima de R$ 4.000.", "code": "MUNDO150", "discount_label": "R$ 150", "expires_in_days": 18, "verified": 1, "exclusive": 1, "priority": 8 },
+    { "id": 19, "store_id": 5, "type": "deal", "title": "Pousadas de praia com até 30% OFF", "description": "Para viagens até março.", "code": null, "discount_label": "30% OFF", "expires_in_days": 7, "verified": 0, "exclusive": 0, "priority": 4 },
+
+    { "id": 20, "store_id": 6, "type": "code", "title": "25% OFF em tênis de corrida", "description": "Modelos selecionados.", "code": "CORRE25", "discount_label": "25% OFF", "expires_in_days": 4, "verified": 1, "exclusive": 1, "priority": 10 },
+    { "id": 21, "store_id": 6, "type": "code", "title": "10% OFF em suplementos", "description": "Whey, creatina e pré-treino.", "code": "FORCA10", "discount_label": "10% OFF", "expires_in_days": 21, "verified": 1, "exclusive": 0, "priority": 6 },
+    { "id": 22, "store_id": 6, "type": "deal", "title": "Roupas de treino a partir de R$ 39", "description": "Camisetas, shorts e tops.", "code": null, "discount_label": "R$ 39", "expires_in_days": null, "verified": 0, "exclusive": 0, "priority": 3 },
+
+    { "id": 23, "store_id": 7, "type": "code", "title": "R$ 70 OFF em lançamentos", "description": "Acima de R$ 599.", "code": "KINE70", "discount_label": "R$ 70", "expires_in_days": 6, "verified": 1, "exclusive": 0, "priority": 7 },
+    { "id": 24, "store_id": 7, "type": "deal", "title": "Segundo par com 50% OFF", "description": "O desconto vale para o par de menor valor.", "code": null, "discount_label": "2º par 50%", "expires_in_days": 11, "verified": 0, "exclusive": 0, "priority": 4 },
+
+    { "id": 25, "store_id": 8, "type": "code", "title": "R$ 100 OFF em air fryers", "description": "Modelos acima de R$ 600.", "code": "FRITA100", "discount_label": "R$ 100", "expires_in_days": 3, "verified": 1, "exclusive": 1, "priority": 9 },
+    { "id": 26, "store_id": 8, "type": "code", "title": "7% OFF em geladeiras", "description": "Pagamento no Pix ou boleto.", "code": "GELA7", "discount_label": "7% OFF", "expires_in_days": 15, "verified": 1, "exclusive": 0, "priority": 6 },
+    { "id": 27, "store_id": 8, "type": "deal", "title": "Eletroportáteis com até 45% OFF", "description": "Liquidificadores, cafeteiras e mais.", "code": null, "discount_label": "45% OFF", "expires_in_days": 8, "verified": 0, "exclusive": 0, "priority": 5 },
+
+    { "id": 28, "store_id": 9, "type": "code", "title": "15% OFF em luminárias", "description": "Pendentes, de mesa e de piso.", "code": "LUZ15", "discount_label": "15% OFF", "expires_in_days": 19, "verified": 1, "exclusive": 0, "priority": 6 },
+    { "id": 29, "store_id": 9, "type": "deal", "title": "Quadros a partir de R$ 59", "description": "Mais de 2 mil modelos.", "code": null, "discount_label": "R$ 59", "expires_in_days": null, "verified": 0, "exclusive": 0, "priority": 3 },
+
+    { "id": 30, "store_id": 10, "type": "code", "title": "R$ 20 OFF no primeiro pedido", "description": "Acima de R$ 100. Não vale para medicamentos.", "code": "SAUDE20", "discount_label": "R$ 20", "expires_in_days": 27, "verified": 1, "exclusive": 0, "priority": 6 },
+    { "id": 31, "store_id": 10, "type": "deal", "title": "Frete grátis em 2 horas", "description": "Nas capitais, pedidos acima de R$ 80.", "code": null, "discount_label": "Frete grátis", "expires_in_days": 30, "verified": 1, "exclusive": 0, "priority": 4 },
+
+    { "id": 32, "store_id": 11, "type": "code", "title": "12% OFF em diárias de dezembro", "description": "Mínimo de duas diárias.", "code": "SERRA12", "discount_label": "12% OFF", "expires_in_days": 13, "verified": 1, "exclusive": 1, "priority": 7 },
+    { "id": 33, "store_id": 11, "type": "code", "title": "Café da manhã grátis", "description": "Campanha encerrada.", "code": "CAFEGRATIS", "discount_label": "Brinde", "expires_in_days": -10, "verified": 0, "exclusive": 0, "priority": 1 },
+
+    { "id": 34, "store_id": 12, "type": "code", "title": "R$ 30 OFF acima de R$ 199", "description": "Produtos vendidos pelo Mercadão Click.", "code": "CLICK30", "discount_label": "R$ 30", "expires_in_days": 1, "verified": 1, "exclusive": 1, "priority": 10 },
+    { "id": 35, "store_id": 12, "type": "code", "title": "10% OFF em eletrônicos", "description": "Limite de R$ 150 de desconto.", "code": "TECH10", "discount_label": "10% OFF", "expires_in_days": 9, "verified": 1, "exclusive": 0, "priority": 8 },
+    { "id": 36, "store_id": 12, "type": "deal", "title": "Ofertas do dia com até 70% OFF", "description": "Novas ofertas todos os dias às 10h.", "code": null, "discount_label": "70% OFF", "expires_in_days": null, "verified": 0, "exclusive": 0, "priority": 6 },
+    { "id": 37, "store_id": 12, "type": "code", "title": "15% OFF em beleza", "description": "Perfumaria e cuidados pessoais.", "code": "BELEZA15", "discount_label": "15% OFF", "expires_in_days": 16, "verified": 0, "exclusive": 0, "priority": 5 }
   ]
 }

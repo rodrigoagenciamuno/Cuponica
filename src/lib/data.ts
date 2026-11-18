@@ -11,12 +11,18 @@ export type Store = {
   network: string;
   network_mid: string | null;
   logo_url?: string | null;
+  /** Cor da marca (hex). Usada no topo da página da loja e no monograma quando não há logo. */
+  brand_color?: string | null;
   intro?: string | null;
   about?: string | null;
   faq: Faq[];
   featured: boolean;
   categories: number[];
   active_coupons?: number;
+  /** Maior desconto entre os cupons ativos (rótulo), quando houver. */
+  best_label?: string | null;
+  /** Loja fictícia de demonstração (network = demo). */
+  demo: boolean;
 };
 export type Coupon = {
   id: number;
@@ -50,8 +56,15 @@ export function clearCache() {
 }
 
 /* ---------- normalização ---------- */
+/** Data de validade a partir de expires_in_days (dados de demonstração) ou expires_at. */
+export function demoExpiry(days: number | null | undefined): Date | null {
+  if (days == null) return null;
+  const d = new Date(Date.now() + days * 86400000);
+  d.setUTCHours(23 + 3, 59, 0, 0); // 23h59 no horário de Brasília
+  return d;
+}
 function toCoupon(r: any): Coupon {
-  const expires = r.expires_at ? new Date(r.expires_at) : null;
+  const expires = r.expires_at ? new Date(r.expires_at) : 'expires_in_days' in r ? demoExpiry(r.expires_in_days) : null;
   return {
     id: Number(r.id),
     store_id: Number(r.store_id),
@@ -84,6 +97,7 @@ function toStore(r: any): Store {
     network: r.network,
     network_mid: r.network_mid ?? null,
     logo_url: r.logo_url ?? null,
+    brand_color: r.brand_color ?? null,
     intro: r.intro ?? null,
     about: r.about ?? null,
     faq,
@@ -92,6 +106,8 @@ function toStore(r: any): Store {
       ? r.categories
       : String(r.category_ids || '').split(',').filter(Boolean).map(Number),
     active_coupons: r.active_coupons != null ? Number(r.active_coupons) : undefined,
+    best_label: r.best_label ?? null,
+    demo: r.network === 'demo',
   };
 }
 function sortCoupons(list: Coupon[]): Coupon[] {
@@ -106,16 +122,18 @@ function sortCoupons(list: Coupon[]): Coupon[] {
 const demoStores = (): Store[] => (demo.stores as any[]).map(toStore);
 const demoCoupons = (): Coupon[] => (demo.coupons as any[]).map(toCoupon);
 function withCounts(stores: Store[], coupons: Coupon[]): Store[] {
-  return stores.map((s) => ({
-    ...s,
-    active_coupons: coupons.filter((c) => c.store_id === s.id && !c.expired).length,
-  }));
+  return stores.map((s) => {
+    const mine = sortCoupons(coupons.filter((c) => c.store_id === s.id && !c.expired));
+    return { ...s, active_coupons: mine.length, best_label: mine.find((c) => c.discount_label)?.discount_label ?? null };
+  });
 }
 
 const STORE_SQL = `
   SELECT s.*, GROUP_CONCAT(DISTINCT sc.category_id) AS category_ids,
     (SELECT COUNT(*) FROM coupons c WHERE c.store_id = s.id AND c.active = 1
-       AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP())) AS active_coupons
+       AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP())) AS active_coupons,
+    (SELECT c.discount_label FROM coupons c WHERE c.store_id = s.id AND c.active = 1 AND c.discount_label IS NOT NULL
+       AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP()) ORDER BY c.priority DESC, c.id DESC LIMIT 1) AS best_label
   FROM stores s LEFT JOIN store_categories sc ON sc.store_id = s.id
   WHERE s.active = 1`;
 
@@ -185,4 +203,15 @@ export async function getCouponById(id: number): Promise<Coupon | undefined> {
 
 export async function getStoreById(id: number): Promise<Store | undefined> {
   return (await getStores()).find((s) => s.id === id);
+}
+
+/** Busca simples por nome de loja (sem acento, sem diferenciar maiúsculas). */
+export async function searchStores(q: string): Promise<Store[]> {
+  const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const term = norm(q);
+  if (!term) return [];
+  const stores = await getStores();
+  return stores
+    .filter((s) => norm(s.name).includes(term) || norm(s.intro || '').includes(term))
+    .sort((a, b) => Number(norm(b.name).startsWith(term)) - Number(norm(a.name).startsWith(term)));
 }

@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
+import StoreCard from '../components/StoreCard.astro';
+import PageHead from '../components/PageHead.astro';
 import { getStores } from '../lib/data';
 import { breadcrumbSchema } from '../lib/seo';
 
@@ -16,20 +17,21 @@ const crumbs = [{ name: 'Início', path: '/' }, { name: 'Lojas de A a Z', path: 
 ---
 <Base
   title="Todas as lojas com cupom de desconto"
-  description={`Lista completa das ${stores.length} lojas com cupons de desconto no Cuponica, de A a Z.`}
+  description={`Lista completa das ${stores.length} lojas com cupons de desconto na Cuponica, de A a Z.`}
   path="/lojas"
   jsonLd={breadcrumbSchema(Astro.site!, crumbs)}
+  section="/lojas"
 >
-  <Breadcrumbs items={crumbs} />
-  <h1>Lojas de A a Z</h1>
-  {letters.map((l) => (
-    <section>
-      <h2>{l}</h2>
-      <ul class="store-grid">
-        {groups.get(l)!.map((s) => (
-          <li><a class="store-tile" href={`/cupom-desconto/${s.slug}`}><strong>{s.name}</strong><small>{s.active_coupons} ativos</small></a></li>
-        ))}
-      </ul>
-    </section>
-  ))}
+  <PageHead title="Lojas de A a Z" lede={`${stores.length} lojas com cupons e ofertas.`} crumbs={crumbs} />
+  <div class="wrap">
+    <nav class="letters" aria-label="Ir para a letra">
+      {letters.map((l) => <a href={`#letra-${l}`}>{l}</a>)}
+    </nav>
+    {letters.map((l) => (
+      <section class="letter-block" id={`letra-${l}`}>
+        <h2>{l}</h2>
+        <ul class="store-grid">{groups.get(l)!.map((s) => <StoreCard store={s} />)}</ul>
+      </section>
+    ))}
+  </div>
 </Base>

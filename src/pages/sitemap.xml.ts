@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ site }) => {
   const urls: { loc: string; priority: string; changefreq: string }[] = [
     { loc: '/', priority: '1.0', changefreq: 'daily' },
     { loc: '/lojas', priority: '0.8', changefreq: 'daily' },
-    ...stores.map((s) => ({ loc: `/cupom-desconto/${s.slug}`, priority: s.featured ? '0.9' : '0.8', changefreq: 'daily' })),
+    ...stores.filter((s) => !s.demo).map((s) => ({ loc: `/cupom-desconto/${s.slug}`, priority: s.featured ? '0.9' : '0.8', changefreq: 'daily' })),
     ...categories.map((c) => ({ loc: `/categoria/${c.slug}`, priority: '0.7', changefreq: 'daily' })),
     { loc: '/sobre', priority: '0.3', changefreq: 'monthly' },
     { loc: '/como-funciona', priority: '0.3', changefreq: 'monthly' },

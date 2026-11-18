@@ -1,44 +1,74 @@
 ---
 import type { Coupon, Store } from '../lib/data';
+import StoreLogo from './StoreLogo.astro';
+import { expiryInfo, splitLabel } from '../lib/ui';
 
 interface Props {
   coupon: Coupon;
   store: Store;
-  /** Mostra o nome da loja no card (usado na home e em categorias). */
+  /** Mostra a loja no card (home, categoria, busca). */
   showStore?: boolean;
+  /** Versão compacta, sem botão (leque do topo da home). */
+  compact?: boolean;
 }
-const { coupon, store, showStore = false } = Astro.props;
+const { coupon, store, showStore = false, compact = false } = Astro.props;
 const goUrl = `/ir/${coupon.id}?p=${encodeURIComponent(Astro.url.pathname)}`;
-const fmt = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' });
-const badge = coupon.discount_label || (coupon.type === 'code' ? 'Cupom' : 'Oferta');
+const label = splitLabel(coupon.discount_label, coupon.type);
+const exp = expiryInfo(coupon.expires_at, coupon.expired);
+const Tag = compact ? 'div' : 'li';
 ---
-<li class:list={['coupon', { 'is-expired': coupon.expired }]} id={`cupom-${coupon.id}`}>
-  <div class="coupon-badge">{badge}</div>
-  <div>
-    {showStore && <a class="coupon-store" href={`/cupom-desconto/${store.slug}`}>{store.name}</a>}
+<Tag
+  class:list={['ticket', { 'is-expired': coupon.expired }]}
+  id={compact ? undefined : `cupom-${coupon.id}`}
+  data-type={coupon.type}
+  style={`--brand:${store.brand_color || '#4f2ef0'}`}
+>
+  <div class="ticket-stub">
+    <span class:list={['sticker', { 'is-text': label.kind === 'text', 'is-money': label.kind === 'money' }]}>
+      {label.kind === 'money' && <small>R$</small>}
+      <b>{label.big}</b>
+      {label.kind === 'pct' && <small>{label.small}</small>}
+    </span>
+  </div>
+
+  <div class="ticket-body">
+    {(showStore || compact) && (
+      compact
+        ? <span class="ticket-store"><StoreLogo store={store} size={22} />{store.name}</span>
+        : <a class="ticket-store" href={`/cupom-desconto/${store.slug}`}><StoreLogo store={store} size={22} />{store.name}</a>
+    )}
     <h3>{coupon.title}</h3>
-    {coupon.description && <p>{coupon.description}</p>}
-    <div class="coupon-meta">
-      {coupon.verified && !coupon.expired && <span class="tag tag-ok">Verificado</span>}
-      {coupon.exclusive && !coupon.expired && <span class="tag tag-ex">Exclusivo</span>}
-      {coupon.expired
-        ? <span>Expirou em {fmt.format(coupon.expires_at!)}</span>
-        : coupon.expires_at
-          ? <span>Válido até {fmt.format(coupon.expires_at)}</span>
-          : <span>Sem data de validade informada</span>}
+    {coupon.description && !compact && <p>{coupon.description}</p>}
+    <div class="ticket-meta">
+      {coupon.verified && !coupon.expired && (
+        <span class="chip chip-ok"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>Verificado</span>
+      )}
+      {coupon.exclusive && !coupon.expired && <span class="chip chip-ex">Exclusivo Cuponica</span>}
+      <span class:list={['chip', { 'chip-hot': exp.hot }]}>{exp.text}</span>
+      {!compact && <span>{coupon.type === 'code' ? 'Cupom com código' : 'Oferta sem código'}</span>}
     </div>
   </div>
-  <div class="coupon-action">
-    {coupon.expired ? (
-      <span class="muted">Cupom expirado</span>
-    ) : coupon.type === 'code' && coupon.code ? (
-      <>
-        <a class="btn btn-reveal" href={goUrl} target="_blank" rel="sponsored nofollow noopener" data-reveal>Ver cupom</a>
-        <div class="code-box" data-code={coupon.code}>{coupon.code}</div>
-        <noscript><div class="code-box" style="display:block">{coupon.code}</div></noscript>
-      </>
-    ) : (
-      <a class="btn" href={goUrl} target="_blank" rel="sponsored nofollow noopener">Ativar oferta</a>
-    )}
-  </div>
-</li>
+
+  {!compact && (
+    <div class="ticket-action">
+      {coupon.expired ? (
+        <p class="expired-note">Este cupom expirou</p>
+      ) : coupon.type === 'code' && coupon.code ? (
+        <>
+          <a class="peel" href={goUrl} target="_blank" rel="sponsored nofollow noopener" data-reveal aria-label={`Pegar cupom: ${coupon.title}`}>
+            <span class="peel-code" aria-hidden="true">{coupon.code}</span>
+            <span class="peel-cover">Pegar cupom</span>
+          </a>
+          <div class="code-box">
+            <strong>{coupon.code}</strong>
+            <button type="button" data-copy={coupon.code}>Copiar</button>
+          </div>
+          <p class="code-status" aria-live="polite"></p>
+          <noscript><div class="code-box" style="display:flex"><strong>{coupon.code}</strong></div></noscript>
+        </>
+      ) : (
+        <a class="btn deal-btn" href={goUrl} target="_blank" rel="sponsored nofollow noopener">Ver oferta na loja</a>
+      )}
+    </div>
+  )}
+</Tag>

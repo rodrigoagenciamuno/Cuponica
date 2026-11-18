@@ -42,6 +42,7 @@ const flash = Astro.url.searchParams.get('ok') ? 'Loja salva. A página pública
       <input type="text" name="slug" value={store.slug} placeholder="gerado a partir do nome" /></label>
     <label>Site da loja<input type="url" name="website_url" value={store.website_url} placeholder="https://www.loja.com.br" /></label>
     <label>Logo (URL da imagem)<input type="url" name="logo_url" value={store.logo_url} /></label>
+    <label>Cor da marca <small>Fundo do topo da página da loja e do monograma quando não há logo.</small><input type="color" name="brand_color" value={store.brand_color || '#4F2EF0'} style="height:40px;padding:2px" /></label>
     <label>Rede de afiliados
       <select name="network">
         {['rakuten', 'awin', 'lomadee', 'admitad', 'direto'].map((n) => <option value={n} selected={store.network === n}>{n}</option>)}

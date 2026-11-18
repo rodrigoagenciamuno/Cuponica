@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import StoreCard from '../components/StoreCard.astro';
+import PageHead from '../components/PageHead.astro';
+import { getStores, searchStores } from '../lib/data';
+
+const q = (Astro.url.searchParams.get('q') || '').trim().slice(0, 80);
+const results = q ? await searchStores(q) : [];
+// Uma única loja encontrada: vai direto para a página dela.
+if (results.length === 1 && results[0].name.toLowerCase() === q.toLowerCase()) {
+  return Astro.redirect(`/cupom-desconto/${results[0].slug}`, 302);
+}
+const popular = results.length ? [] : (await getStores()).filter((s) => s.featured).slice(0, 8);
+---
+<Base title={q ? `Busca: ${q}` : 'Buscar loja'} description="Busque cupons de desconto por loja." path="/busca" noindex q={q}>
+  <PageHead title={q ? (results.length ? `Lojas para “${q}”` : `Nenhuma loja para “${q}”`) : 'Buscar loja'}
+    lede={q && !results.length ? 'Confira a grafia ou tente só o começo do nome da loja.' : null} />
+  <div class="wrap">
+    {results.length > 0 && <ul class="store-grid">{results.map((s) => <StoreCard store={s} />)}</ul>}
+    {popular.length > 0 && (
+      <section>
+        <h2>Lojas populares</h2>
+        <ul class="store-grid">{popular.map((s) => <StoreCard store={s} />)}</ul>
+        <p style="margin-top:22px"><a href="/lojas">Ver todas as lojas de A a Z</a></p>
+      </section>
+    )}
+  </div>
+</Base>

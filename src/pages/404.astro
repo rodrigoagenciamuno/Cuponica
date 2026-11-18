@@ -1,10 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
 Astro.response.status = 404;
 ---
 <Base title="Página não encontrada" description="A página que você procurou não existe." noindex>
-  <div class="hero">
-    <h1>Página não encontrada</h1>
-    <p>Talvez a loja tenha mudado de endereço. Veja a <a href="/lojas">lista completa de lojas</a> ou volte para a <a href="/">página inicial</a>.</p>
-  </div>
+  <PageHead title="Página não encontrada" lede="A loja pode ter mudado de endereço. Busque pelo nome no topo da página ou veja todas as lojas." />
+  <div class="wrap"><a class="btn" href="/lojas">Ver lojas de A a Z</a></div>
 </Base>

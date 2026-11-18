@@ -2,18 +2,24 @@
 import Base from '../../layouts/Base.astro';
 import CouponCard from '../../components/CouponCard.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import { getStore, getStoreCoupons, getCategories } from '../../lib/data';
+import StoreLogo from '../../components/StoreLogo.astro';
+import { getStore, getStoreCoupons, getCategories, getStores } from '../../lib/data';
 import { breadcrumbSchema, faqSchema, monthYear } from '../../lib/seo';
+import { onColor, plural } from '../../lib/ui';
 
 const store = await getStore(String(Astro.params.loja));
 if (!store) return Astro.rewrite('/404');
 
-const [coupons, categories] = await Promise.all([getStoreCoupons(store.id), getCategories()]);
+const [coupons, categories, allStores] = await Promise.all([getStoreCoupons(store.id), getCategories(), getStores()]);
 const active = coupons.filter((c) => !c.expired);
 const expired = coupons.filter((c) => c.expired).slice(0, 10);
 const storeCats = categories.filter((c) => store.categories.includes(c.id));
 const codes = active.filter((c) => c.type === 'code').length;
 const best = active.find((c) => c.discount_label)?.discount_label;
+const related = allStores
+  .filter((s) => s.id !== store.id && s.categories.some((c) => store.categories.includes(c)))
+  .sort((a, b) => (b.active_coupons ?? 0) - (a.active_coupons ?? 0))
+  .slice(0, 5);
 
 const path = `/cupom-desconto/${store.slug}`;
 const crumbs = [
@@ -29,68 +35,114 @@ const description = active.length
 
 const schemas = [breadcrumbSchema(Astro.site!, crumbs), faqSchema(store.faq)].filter(Boolean) as object[];
 const goStore = `/ir/loja/${store.slug}?p=${encodeURIComponent(path)}`;
+const brand = store.brand_color || '#4f2ef0';
+const light = onColor(brand) === 'dark';
+const updated = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date());
 ---
-<Base title={title} description={description} path={path} jsonLd={schemas}>
-  <Breadcrumbs items={crumbs} />
-
-  <div class="store-head">
-    <div>
-      <h1>Cupom de desconto {store.name}</h1>
-      {store.intro && <p class="muted">{store.intro}</p>}
+<Base title={title} description={description} path={path} jsonLd={schemas} noindex={store.demo}>
+  <section class:list={['store-hero', { 'on-light': light }]} style={`--brand:${brand};--on-brand:${light ? '#16123a' : '#fff'}`}>
+    <div class="wrap">
+      <Breadcrumbs items={crumbs} />
+      <div class="store-id">
+        <StoreLogo store={store} />
+        <div>
+          <h1>Cupom de desconto {store.name}</h1>
+          {store.intro && <p>{store.intro}</p>}
+          <ul class="store-stats">
+            <li>{plural(active.length, 'oferta ativa', 'ofertas ativas')}</li>
+            {codes > 0 && <li>{plural(codes, 'cupom com código', 'cupons com código')}</li>}
+            {best && <li>Até {best}</li>}
+            <li>Atualizado em {updated}</li>
+          </ul>
+        </div>
+        {store.website_url && <a class="btn btn-light" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
+      </div>
     </div>
-    {store.website_url && <a class="btn btn-ghost" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
-  </div>
+  </section>
 
-  <div class="store-layout">
-    <div>
-      <section>
-        <h2>{active.length ? `${active.length} ${active.length === 1 ? 'oferta válida' : 'ofertas válidas'} hoje` : 'Nenhum cupom ativo no momento'}</h2>
-        {active.length > 0
-          ? <ul class="coupon-list">{active.map((c) => <CouponCard coupon={c} store={store} />)}</ul>
-          : <p class="muted">Estamos de olho na {store.name}. Novos cupons aparecem aqui assim que forem lançados.</p>}
-      </section>
-
-      {expired.length > 0 && (
-        <section>
-          <h2>Cupons {store.name} expirados recentemente</h2>
-          <ul class="coupon-list">{expired.map((c) => <CouponCard coupon={c} store={store} />)}</ul>
+  <div class="wrap store-body">
+    <div class="store-layout">
+      <div class="store-main">
+        <section class="filter-scope" aria-label={`Cupons ${store.name}`}>
+          {active.length > 0 ? (
+            <>
+              {codes > 0 && codes < active.length && (
+                <div class="filter" role="radiogroup" aria-label="Filtrar cupons">
+                  <input type="radio" name="f-loja" id="fl-all" class="f-all" checked /><label for="fl-all">Todos <span>{active.length}</span></label>
+                  <input type="radio" name="f-loja" id="fl-code" class="f-code" /><label for="fl-code">Com código <span>{codes}</span></label>
+                  <input type="radio" name="f-loja" id="fl-deal" class="f-deal" /><label for="fl-deal">Ofertas <span>{active.length - codes}</span></label>
+                </div>
+              )}
+              <ul class="ticket-list">{active.map((c) => <CouponCard coupon={c} store={store} />)}</ul>
+            </>
+          ) : (
+            <div class="empty">
+              <h2>Nenhum cupom {store.name} ativo agora</h2>
+              <p class="muted">Novos cupons aparecem aqui assim que a loja lançar. Enquanto isso, veja as ofertas direto no site.</p>
+              {store.website_url && <a class="btn" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
+            </div>
+          )}
         </section>
-      )}
 
-      {store.about && (
-        <section class="prose">
-          <h2>Sobre a {store.name}</h2>
-          <p>{store.about}</p>
-        </section>
-      )}
+        {expired.length > 0 && (
+          <section class="section">
+            <h2>Cupons {store.name} que já expiraram</h2>
+            <p class="muted">Ficam aqui como referência. Os códigos não funcionam mais.</p>
+            <ul class="ticket-list">{expired.map((c) => <CouponCard coupon={c} store={store} />)}</ul>
+          </section>
+        )}
 
-      {store.faq.length > 0 && (
-        <section class="prose">
-          <h2>Perguntas frequentes sobre cupons {store.name}</h2>
-          {store.faq.map((f) => (
-            <details class="faq">
-              <summary>{f.q}</summary>
-              <p>{f.a}</p>
-            </details>
-          ))}
-        </section>
-      )}
+        {store.about && (
+          <section class="section prose">
+            <h2>Sobre a {store.name}</h2>
+            <p>{store.about}</p>
+          </section>
+        )}
+
+        {store.faq.length > 0 && (
+          <section class="section prose">
+            <h2>Perguntas frequentes sobre cupons {store.name}</h2>
+            {store.faq.map((f) => (
+              <details class="faq">
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </section>
+        )}
+      </div>
+
+      <aside class="rail">
+        <div class="panel">
+          <h2>Como usar o cupom {store.name}</h2>
+          <ol class="steps">
+            <li><span><strong>Clique em Pegar cupom</strong>A {store.name} abre em outra aba e o código fica copiado.</span></li>
+            <li><span><strong>Monte o carrinho</strong>Confira o valor mínimo na descrição do cupom.</span></li>
+            <li><span><strong>Cole o código</strong>No campo de cupom, antes de pagar.</span></li>
+          </ol>
+        </div>
+        {related.length > 0 && (
+          <div class="panel">
+            <h2>Lojas parecidas</h2>
+            <ul class="related">
+              {related.map((s) => (
+                <li>
+                  <a href={`/cupom-desconto/${s.slug}`}>
+                    <StoreLogo store={s} />
+                    <span><strong>{s.name}</strong><small>{s.best_label ? `Até ${s.best_label}` : plural(s.active_coupons ?? 0, 'cupom ativo', 'cupons ativos')}</small></span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {storeCats.length > 0 && (
+          <div class="panel">
+            <h2>Categorias</h2>
+            <ul class="cat-list">{storeCats.map((c) => <li><a href={`/categoria/${c.slug}`}>{c.name}</a></li>)}</ul>
+          </div>
+        )}
+      </aside>
     </div>
-
-    <aside class="side">
-      <h2>Resumo {store.name}</h2>
-      <ul>
-        <li>{active.length} {active.length === 1 ? 'oferta ativa' : 'ofertas ativas'}</li>
-        <li>{codes} {codes === 1 ? 'cupom com código' : 'cupons com código'}</li>
-        {best && <li>Maior desconto: {best}</li>}
-        <li>Atualizado em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date())}</li>
-      </ul>
-      {storeCats.length > 0 && (
-        <>
-          <h2 style="margin-top:18px">Categorias</h2>
-          <ul>{storeCats.map((c) => <li><a href={`/categoria/${c.slug}`}>{c.name}</a></li>)}</ul>
-        </>
-      )}
-    </aside>
   </div>
 </Base>

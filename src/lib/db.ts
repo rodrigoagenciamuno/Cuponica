@@ -70,6 +70,12 @@ async function migrate(): Promise<void> {
     .map((s) => s.replace(/^\s*--.*$/gm, '').trim())
     .filter(Boolean);
   for (const sql of statements) await p.query(sql);
+  // Colunas adicionadas depois da primeira versão (CREATE TABLE IF NOT EXISTS não altera tabela existente).
+  const [cols] = await p.query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'stores'",
+  );
+  const have = new Set((cols as any[]).map((c) => c.COLUMN_NAME));
+  if (!have.has('brand_color')) await p.query('ALTER TABLE stores ADD COLUMN brand_color VARCHAR(9) NULL AFTER logo_url');
   const [rows] = await p.query('SELECT COUNT(*) AS n FROM categories');
   if (Number((rows as any)[0].n) === 0) {
     for (const [slug, name, intro] of BASE_CATEGORIES) {
