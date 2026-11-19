@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import StoreLogo from '../components/StoreLogo.astro';
+import { getCategories, getStores } from '../lib/data';
+import { breadcrumbSchema } from '../lib/seo';
+import { plural } from '../lib/ui';
+
+const [categories, stores] = await Promise.all([getCategories(), getStores()]);
+const crumbs = [{ name: 'Início', path: '/' }, { name: 'Categorias', path: '/categorias' }];
+const rows = categories.map((c) => {
+  const mine = stores.filter((s) => s.categories.includes(c.id)).sort((a, b) => (b.active_coupons ?? 0) - (a.active_coupons ?? 0));
+  return { c, stores: mine, coupons: mine.reduce((n, s) => n + (s.active_coupons ?? 0), 0) };
+});
+---
+<Base title="Categorias de cupons de desconto" description="Cupons de desconto organizados por categoria: moda, eletrônicos, casa, beleza, viagens e mais."
+  path="/categorias" jsonLd={breadcrumbSchema(Astro.site!, crumbs)} section="/categorias">
+  <PageHead title="Categorias" lede="Escolha o tipo de produto e veja as lojas e os cupons de cada área." crumbs={crumbs} />
+  <div class="wrap">
+    <ul class="cat-grid">
+      {rows.map(({ c, stores, coupons }) => (
+        <li>
+          <a href={`/categoria/${c.slug}`}>
+            <strong>{c.name}</strong>
+            <small>{plural(stores.length, 'loja', 'lojas')}, {plural(coupons, 'cupom ativo', 'cupons ativos')}</small>
+            <span class="cat-logos">{stores.slice(0, 4).map((s) => <StoreLogo store={s} size={32} />)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>

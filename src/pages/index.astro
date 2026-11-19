@@ -13,12 +13,14 @@ const stripStores = [...stores]
   .sort((a, b) => Number(b.featured) - Number(a.featured) || (b.active_coupons ?? 0) - (a.active_coupons ?? 0))
   .slice(0, 12);
 
-// Leque do topo: os três melhores cupons com código, de lojas diferentes.
-const fan: typeof all = [];
+// Destaques do topo: os quatro melhores cupons, de lojas diferentes.
+const top: typeof all = [];
 for (const c of all) {
-  if (fan.length === 3) break;
-  if (c.type === 'code' && !fan.some((f) => f.store_id === c.store_id)) fan.push(c);
+  if (top.length === 4) break;
+  if (c.discount_label && !top.some((f) => f.store_id === c.store_id)) top.push(c);
 }
+const gridStores = stripStores;
+const updated = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' }).format(new Date());
 // Cupons de hoje: os melhores códigos e as melhores ofertas, misturados por prioridade.
 const today = [
   ...all.filter((c) => c.type === 'code').slice(0, 11),
@@ -48,56 +50,74 @@ const siteSchema = {
   description="Cupons de desconto e ofertas verificadas das principais lojas online do Brasil. Atualizado todos os dias."
   path="/"
   jsonLd={siteSchema}
+  headerSearch={false}
 >
   <section class="hero">
     <div class="wrap">
-      <div>
-        <h1>Cupom que funciona, sem caça ao tesouro.</h1>
-        <p class="hero-lede">Códigos testados das lojas que você já usa. Pegou, colou no carrinho, economizou.</p>
+      <div class="hero-copy">
+        <p class="hero-date">Atualizado hoje, {updated}</p>
+        <h1>Cupons de desconto verificados das lojas que você usa.</h1>
+        <p class="hero-lede">Códigos e ofertas conferidos todos os dias. Sem cadastro e sem custo.</p>
         <form class="big-search" action="/busca" method="get" role="search">
-          <label class="sr" for="busca-hero">Qual loja você procura?</label>
-          <input id="busca-hero" type="search" name="q" placeholder="Qual loja você procura?" autocomplete="off" />
+          <label class="sr" for="busca-hero">Buscar loja</label>
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
+          <input id="busca-hero" type="search" name="q" placeholder="Busque uma loja" autocomplete="off" />
           <button class="btn" type="submit">Buscar</button>
         </form>
-        <ul class="hero-stores" aria-label="Lojas populares">
-          {stripStores.slice(0, 5).map((s) => (
-            <li><a href={`/cupom-desconto/${s.slug}`}><StoreLogo store={s} />{s.name}</a></li>
-          ))}
+        <ul class="hero-trust">
+          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>Cupons testados pela equipe</li>
+          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>Link direto para a loja oficial</li>
+          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>Grátis, sem cadastro</li>
         </ul>
       </div>
-      {fan.length === 3 && (
-        <div class="fan" aria-label="Melhores cupons de hoje">
-          {fan.map((c) => (
-            <a class="fan-item" href={`/cupom-desconto/${c.store.slug}#cupom-${c.id}`} aria-label={`${c.store.name}: ${c.title}`}>
-              <CouponCard coupon={c} store={c.store} compact />
-            </a>
-          ))}
+      {top.length > 0 && (
+        <div class="hero-picks">
+          <h2>Destaques de hoje</h2>
+          <ul>
+            {top.map((c) => (
+              <li>
+                <a href={`/cupom-desconto/${c.store.slug}#cupom-${c.id}`}>
+                  <StoreLogo store={c.store} size={44} />
+                  <span class="pick-text"><small>{c.store.name}</small><strong>{c.title}</strong></span>
+                  <span class="pick-tag">{c.discount_label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <a class="hero-picks-all" href="#cupons-de-hoje">Ver todos os cupons de hoje</a>
         </div>
       )}
     </div>
   </section>
 
-  <div class="wrap">
-    {stripStores.length > 0 && (
-      <nav class="store-strip" aria-label="Lojas em alta">
-        <ul>
-          {stripStores.map((s) => (
+  {gridStores.length > 0 && (
+    <section class="brands" aria-labelledby="h-lojas">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="h-lojas">Lojas em destaque</h2>
+          <a href="/lojas">Ver todas as {stores.length} lojas</a>
+        </div>
+        <ul class="brand-grid">
+          {gridStores.map((s) => (
             <li>
               <a href={`/cupom-desconto/${s.slug}`}>
-                <StoreLogo store={s} />
-                <span><strong>{s.name}</strong><small>{s.best_label ? `até ${s.best_label}` : plural(s.active_coupons ?? 0, 'cupom', 'cupons')}</small></span>
+                <StoreLogo store={s} size={72} />
+                <span class="b-name">{s.name}</span>
+                <strong class="b-best">{s.best_label ? `Até ${s.best_label}` : plural(s.active_coupons ?? 0, 'cupom', 'cupons')}</strong>
+                <small class="b-count">{plural(s.active_coupons ?? 0, 'cupom ativo', 'cupons ativos')}</small>
               </a>
             </li>
           ))}
         </ul>
-      </nav>
-    )}
+      </div>
+    </section>
+  )}
 
+  <div class="wrap">
     <div class="home-grid section">
-      <section class="filter-scope" aria-labelledby="h-hoje">
+      <section class="filter-scope" aria-labelledby="h-hoje" id="cupons-de-hoje">
         <div class="section-head">
           <h2 id="h-hoje">Cupons de hoje</h2>
-          <a href="/lojas">Ver todas as lojas</a>
         </div>
         <div class="filter" role="radiogroup" aria-label="Filtrar cupons">
           <input type="radio" name="f-home" id="fh-all" class="f-all" checked /><label for="fh-all">Todos <span>{today.length}</span></label>

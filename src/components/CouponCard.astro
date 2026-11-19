@@ -45,7 +45,6 @@ const Tag = compact ? 'div' : 'li';
       )}
       {coupon.exclusive && !coupon.expired && <span class="chip chip-ex">Exclusivo Cuponica</span>}
       <span class:list={['chip', { 'chip-hot': exp.hot }]}>{exp.text}</span>
-      {!compact && <span>{coupon.type === 'code' ? 'Cupom com código' : 'Oferta sem código'}</span>}
     </div>
   </div>
 

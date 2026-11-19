@@ -19,8 +19,9 @@ export function onColor(hex: string | null | undefined): 'light' | 'dark' {
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   });
   const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  // contraste com branco vs. com a tinta (#16123a, luminância ~0,012)
-  return (1.05 / (lum + 0.05)) >= ((lum + 0.05) / 0.062) ? 'light' : 'dark';
+  // Texto branco por padrão (marcas costumam usar branco sobre a cor); tinta só em cores bem claras,
+  // como amarelo e verde-limão, onde o branco fica ilegível.
+  return lum > 0.4 ? 'dark' : 'light';
 }
 
 /** Iniciais para o monograma: "Casa Nuvem" → CN, "Vestra" → V. */

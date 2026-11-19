@@ -2,6 +2,7 @@
 import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '../styles/global.css';
+import { getCategories, getStores } from '../lib/data';
 
 interface Props {
   title: string;
@@ -15,16 +16,19 @@ interface Props {
   section?: string;
   /** Texto já digitado na busca do cabeçalho. */
   q?: string;
+  /** Busca no cabeçalho. Desligada na home, que já tem a busca principal no topo. */
+  headerSearch?: boolean;
 }
 
-const { title, description, path, noindex = false, jsonLd, ogImage, section, q = '' } = Astro.props;
+const { title, description, path, noindex = false, jsonLd, ogImage, section, q = '', headerSearch = true } = Astro.props;
 const nav = [
-  ['/lojas', 'Lojas de A a Z'],
-  ['/categoria/moda', 'Moda'],
-  ['/categoria/eletronicos', 'Eletrônicos'],
-  ['/categoria/casa', 'Casa'],
-  ['/categoria/beleza', 'Beleza'],
+  ['/lojas', 'Lojas'],
+  ['/categorias', 'Categorias'],
+  ['/como-funciona', 'Como funciona'],
 ];
+// Rodapé: categorias e lojas com mais cupons (dados em cache, não pesa na página).
+const [footCats, footStores] = await Promise.all([getCategories(), getStores()]);
+const topStores = [...footStores].sort((a, b) => (b.active_coupons ?? 0) - (a.active_coupons ?? 0)).slice(0, 6);
 const site = Astro.site!;
 const canonical = new URL(path ?? Astro.url.pathname, site).toString();
 const fullTitle = title.includes('Cuponica') ? title : `${title} | Cuponica`;
@@ -67,29 +71,74 @@ const orgSchema = {
           <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 4h20a2 2 0 0 1 2 2v6a4 4 0 0 0 0 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a4 4 0 0 0 0-8V6a2 2 0 0 1 2-2z" fill="#ffe03d"/><path d="M12.5 21.5l7-11" stroke="#16123a" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="2.2" fill="#16123a"/><circle cx="20" cy="20" r="2.2" fill="#16123a"/></svg>
           <span>cuponica</span>
         </a>
-        <form class="head-search" action="/busca" method="get" role="search">
-          <label class="sr" for="busca-topo">Buscar loja</label>
-          <input id="busca-topo" type="search" name="q" value={q} placeholder="Buscar loja ou marca" autocomplete="off" />
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
-        </form>
         <nav class="nav" aria-label="Principal">
           {nav.map(([href, label]) => <a href={href} aria-current={section === href ? 'page' : undefined}>{label}</a>)}
         </nav>
+        {headerSearch ? (
+          <form class="head-search" action="/busca" method="get" role="search">
+            <label class="sr" for="busca-topo">Buscar loja</label>
+            <input id="busca-topo" type="search" name="q" value={q} placeholder="Buscar loja" autocomplete="off" />
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
+          </form>
+        ) : (
+          <a class="head-search-link" href="/busca" aria-label="Buscar loja">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
+          </a>
+        )}
       </div>
     </header>
     <main>
       <slot />
     </main>
     <footer class="site-footer">
-      <div class="wrap">
-        <nav aria-label="Rodapé">
-          <a href="/lojas">Lojas de A a Z</a>
-          <a href="/como-funciona">Como funciona</a>
-          <a href="/sobre">Sobre a Cuponica</a>
-          <a href="/privacidade">Privacidade</a>
-        </nav>
-        <p>© {new Date().getFullYear()} Cuponica</p>
-        <p>A Cuponica pode receber comissão quando você compra pelos nossos links. Isso não muda o preço que você paga.</p>
+      <div class="foot-top">
+        <div class="wrap foot-grid">
+          <div class="foot-brand">
+            <a class="logo" href="/" aria-label="Cuponica, página inicial">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 4h20a2 2 0 0 1 2 2v6a4 4 0 0 0 0 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a4 4 0 0 0 0-8V6a2 2 0 0 1 2-2z" fill="#ffe03d"/><path d="M12.5 21.5l7-11" stroke="#16123a" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="2.2" fill="#16123a"/><circle cx="20" cy="20" r="2.2" fill="#16123a"/></svg>
+              <span>cuponica</span>
+            </a>
+            <p>Cupons de desconto e ofertas das principais lojas online do Brasil, conferidos e atualizados todos os dias.</p>
+            <ul class="foot-trust">
+              <li>Grátis, sem cadastro</li>
+              <li>Cupons conferidos todos os dias</li>
+              <li>Links seguros para a loja oficial</li>
+            </ul>
+          </div>
+          <nav aria-labelledby="f-cuponica">
+            <h2 id="f-cuponica">Cuponica</h2>
+            <ul>
+              <li><a href="/sobre">Quem somos</a></li>
+              <li><a href="/como-funciona">Como funciona</a></li>
+              <li><a href="/privacidade">Privacidade</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="f-cupons">
+            <h2 id="f-cupons">Cupons</h2>
+            <ul>
+              <li><a href="/lojas">Lojas de A a Z</a></li>
+              <li><a href="/categorias">Todas as categorias</a></li>
+              <li><a href="/busca">Buscar loja</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="f-cats">
+            <h2 id="f-cats">Categorias</h2>
+            <ul>{footCats.slice(0, 6).map((c) => <li><a href={`/categoria/${c.slug}`}>{c.name}</a></li>)}</ul>
+          </nav>
+          {topStores.length > 0 && (
+            <nav aria-labelledby="f-lojas">
+              <h2 id="f-lojas">Lojas em alta</h2>
+              <ul>{topStores.map((s) => <li><a href={`/cupom-desconto/${s.slug}`}>Cupom {s.name}</a></li>)}</ul>
+            </nav>
+          )}
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <div class="wrap">
+          <p>© {new Date().getFullYear()} Cuponica. Todos os direitos reservados.</p>
+          <p>A Cuponica pode receber comissão quando você compra pelos links do site. Isso não muda o preço que você paga. As condições de cada cupom são definidas pela loja.</p>
+          <a class="to-top" href="#">Voltar ao topo</a>
+        </div>
       </div>
     </footer>
     <div class="toast" role="status" aria-live="polite"></div>
