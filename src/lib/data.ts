@@ -59,9 +59,9 @@ export function clearCache() {
 /** Data de validade a partir de expires_in_days (dados de demonstração) ou expires_at. */
 export function demoExpiry(days: number | null | undefined): Date | null {
   if (days == null) return null;
-  const d = new Date(Date.now() + days * 86400000);
-  d.setUTCHours(23 + 3, 59, 0, 0); // 23h59 no horário de Brasília
-  return d;
+  // Dia de validade no horário de Brasília, terminando às 23h59.
+  const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(Date.now() + days * 86400000));
+  return new Date(`${key}T23:59:00-03:00`);
 }
 function toCoupon(r: any): Coupon {
   const expires = r.expires_at ? new Date(r.expires_at) : 'expires_in_days' in r ? demoExpiry(r.expires_in_days) : null;

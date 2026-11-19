@@ -154,7 +154,12 @@ const orgSchema = {
         }
         function copy(code, card) {
           var status = card && card.querySelector('.code-status');
-          var done = function () { if (status) status.textContent = 'Código copiado. Cole no carrinho da loja.'; say('Código ' + code + ' copiado'); };
+          var btn = card && card.querySelector('[data-copy]');
+          var done = function () {
+            if (status) status.textContent = 'Código copiado. Cole no carrinho da loja.';
+            if (btn) { btn.textContent = 'Copiado'; btn.classList.add('done'); }
+            say('Código ' + code + ' copiado');
+          };
           if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () { if (status) status.textContent = 'Selecione o código e copie.'; });
           else if (status) status.textContent = 'Selecione o código e copie.';
         }
@@ -168,6 +173,21 @@ const orgSchema = {
           var btn = card.querySelector('[data-copy]');
           if (btn) { copy(btn.getAttribute('data-copy'), card); btn.focus({ preventScroll: true }); }
         });
+        /* Contagem regressiva dos cupons que terminam hoje ou amanhã */
+        var timers = [].slice.call(document.querySelectorAll('[data-expires]'));
+        if (timers.length) {
+          var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+          var tick = function () {
+            var now = Date.now();
+            timers.forEach(function (el) {
+              var left = Math.max(0, Date.parse(el.getAttribute('data-expires')) - now);
+              var h = Math.floor(left / 36e5), m = Math.floor(left % 36e5 / 6e4), s = Math.floor(left % 6e4 / 1e3);
+              var out = el.querySelector('.exp-text');
+              if (out) out.textContent = left ? 'Termina em ' + pad(h) + ':' + pad(m) + ':' + pad(s) : 'Encerrado';
+            });
+          };
+          tick(); setInterval(tick, 1000);
+        }
       })();
     </script>
   </body>

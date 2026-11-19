@@ -87,149 +87,207 @@ p { margin: 0 0 1em; }
 
 /* ==========================================================================
    Ticket (cartão de cupom)
+   Canhoto na cor da loja com o desconto em tipo grande, picote com recortes,
+   e um botão que descasca. Ao pegar o cupom, o canhoto "rasga" e o código entra.
    ========================================================================== */
-.ticket-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.ticket-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; }
 .ticket {
   --brand: var(--violet);
+  --on-brand: #fff;
   --notch: var(--paper);
+  --stub: 150px;
   position: relative;
   display: grid;
-  grid-template-columns: 132px 1fr 232px;
+  grid-template-columns: var(--stub) 1fr 236px;
   background: var(--card);
-  border-radius: var(--r-md);
-  box-shadow: 0 1px 0 var(--line), 0 0 0 1px var(--line);
+  border-radius: 18px;
+  box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(22,18,58,.04);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.ticket:hover { box-shadow: 0 0 0 1.5px var(--ink); }
+.ticket:hover, .ticket:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand) 45%, var(--line)), 0 18px 36px -18px color-mix(in srgb, var(--brand) 60%, transparent);
+}
 
-/* Canhoto com a etiqueta */
+/* Canhoto */
 .ticket-stub {
   position: relative;
-  display: grid;
-  place-items: center;
-  padding: 18px 10px;
-  background: color-mix(in srgb, var(--brand) 8%, #fff);
-  border-radius: var(--r-md) 0 0 var(--r-md);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 20px 12px;
+  color: var(--on-brand);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.28), transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 2px, transparent 2px 9px),
+    var(--brand);
+  border-radius: 18px 0 0 18px;
+  transform-origin: 100% 0;
+  overflow: hidden;
 }
-/* Picote entre o canhoto e o corpo */
+/* Brilho que atravessa o canhoto quando a pessoa passa o mouse no cupom */
+.ticket-stub::before {
+  content: '';
+  position: absolute; inset: -20% auto -20% -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+.ticket:hover .ticket-stub::before { animation: shine .9s ease; }
+@keyframes shine { 0% { left: -60%; opacity: 1; } 100% { left: 130%; opacity: 1; } }
+
+/* Picote: linha tracejada + dois recortes */
 .ticket-stub::after {
   content: '';
-  position: absolute;
-  right: -1px; top: 14px; bottom: 14px;
-  border-right: 2px dashed var(--line);
+  position: absolute; right: 0; top: 16px; bottom: 16px;
+  border-right: 2px dashed rgba(255,255,255,.55);
 }
 .ticket::before, .ticket::after {
   content: '';
   position: absolute;
-  left: 121px;
+  left: calc(var(--stub) - 11px);
   width: 22px; height: 22px;
   border-radius: 50%;
   background: var(--notch);
-  box-shadow: inset 0 0 0 1px var(--line);
-  z-index: 1;
+  z-index: 2;
 }
-.ticket::before { top: -11px; clip-path: inset(50% 0 0 0); }
-.ticket::after { bottom: -11px; clip-path: inset(0 0 50% 0); }
+.ticket::before { top: -11px; box-shadow: inset 0 -1px 0 var(--line); }
+.ticket::after { bottom: -11px; box-shadow: inset 0 1px 0 var(--line); }
 
-/* Etiqueta de preço amarela */
-.sticker {
-  position: relative;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-width: 92px; min-height: 76px;
-  padding: 10px 12px 10px 20px;
-  background: var(--sticker);
-  color: var(--ink);
-  font-family: var(--display);
-  font-weight: 700;
-  line-height: .95;
-  letter-spacing: -.04em;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  transform: rotate(-2deg);
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-  border-radius: 4px;
+/* Desconto em tipo grande */
+.disc { display: grid; grid-template-columns: auto auto; align-items: end; column-gap: 3px; line-height: .85; font-variant-numeric: tabular-nums; }
+.disc-num { font-size: 2.9rem; font-weight: 750; letter-spacing: -.06em; grid-row: 1 / 3; }
+.disc-pre, .disc-suf { font-size: .78rem; font-weight: 700; letter-spacing: .02em; opacity: .92; }
+.disc-pct .disc-num { grid-column: 1; }
+.disc-pct .disc-suf { grid-column: 2; grid-row: 2; padding-bottom: 5px; }
+.disc-money { grid-template-columns: auto auto; }
+.disc-money .disc-pre { grid-column: 1; grid-row: 1; align-self: start; padding-top: 3px; }
+.disc-money .disc-num { grid-column: 2; grid-row: 1 / 3; }
+.disc-money .disc-suf { grid-column: 1; grid-row: 2; padding-bottom: 5px; }
+.disc-text { display: block; text-align: center; }
+.disc-text .disc-num { font-size: 1.35rem; letter-spacing: -.03em; line-height: 1.05; max-width: 110px; display: block; }
+.stub-type {
+  font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+  padding: 3px 9px; border-radius: 99px;
+  background: rgba(255,255,255,.2);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.3);
 }
-.sticker::before { /* furo da etiqueta */
-  content: '';
-  position: absolute; left: 10px; top: calc(50% - 4px);
-  width: 8px; height: 8px; border-radius: 50%;
-  background: color-mix(in srgb, var(--brand) 8%, #fff);
-}
-.sticker b { font-size: 1.95rem; font-weight: 700; }
-.sticker small { font-size: .74rem; font-weight: 600; letter-spacing: .02em; margin-top: 4px; }
-.sticker.is-text b { font-size: 1rem; line-height: 1.1; letter-spacing: -.02em; font-weight: 650; max-width: 84px; }
-.sticker.is-money small { margin: 0 0 3px; }
 
-.ticket-body { padding: 18px 22px 16px 26px; min-width: 0; }
-.ticket-store { display: inline-flex; align-items: center; gap: 8px; font-size: .86rem; font-weight: 650; text-decoration: none; margin-bottom: 6px; color: var(--ink-soft); }
+/* Fita de exclusivo, saindo da borda do card */
+.ribbon {
+  position: absolute; top: -11px; left: calc(var(--stub) + 26px); z-index: 3;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 11px 3px 9px;
+  font-size: .76rem; font-weight: 650;
+  color: #fff;
+  background: linear-gradient(90deg, var(--violet), #7a5cff);
+  border-radius: 99px;
+  box-shadow: 0 6px 14px -6px rgba(79,46,240,.7);
+}
+.ribbon svg { width: 12px; height: 12px; color: var(--sticker); }
+
+.ticket-body { padding: 22px 22px 18px 30px; min-width: 0; align-self: center; }
+.ticket-store { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 600; text-decoration: none; margin-bottom: 6px; color: var(--ink-soft); }
 .ticket-store:hover { color: var(--ink); }
-.ticket h3 { margin: 0 0 4px; }
-.ticket-body > p { margin: 0; font-size: .93rem; color: var(--ink-soft); }
-.ticket-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 12px; font-size: .8rem; color: var(--ink-soft); align-items: center; }
-.chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; padding: 3px 10px; font-weight: 650; background: var(--paper); color: var(--ink-soft); }
-.chip svg { width: 13px; height: 13px; }
-.chip-ok { background: var(--mint-tint); color: var(--mint); }
-.chip-ex { background: var(--violet-tint); color: var(--violet-deep); }
-.chip-hot { background: var(--hot-tint); color: var(--hot); }
+.ticket h3 { margin: 0 0 4px; font-size: 1.12rem; }
+.ticket-body > p { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+.ticket-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: .83rem; color: var(--ink-soft); align-items: center; }
+.ticket-meta > span { display: inline-flex; align-items: center; gap: 6px; }
+.ticket-meta svg { width: 14px; height: 14px; }
+.meta-ok { color: var(--mint); font-weight: 600; }
+.meta-exp.is-hot { color: var(--hot); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 0 0 rgba(224,40,79,.5); animation: pulse 1.6s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(224,40,79,0); } 100% { box-shadow: 0 0 0 0 rgba(224,40,79,0); } }
 
-.ticket-action { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 18px 20px 18px 0; }
+.ticket-action { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 20px 22px 20px 0; }
 
-/* Botão que "descasca" e deixa o fim do código à mostra */
-.peel {
-  position: relative;
-  display: block;
-  height: 50px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  box-shadow: inset 0 0 0 2px var(--ink);
-  text-decoration: none;
-  overflow: hidden;
-}
+/* Botão que descasca: a capa recua e mostra mais do código no hover */
+.peel { position: relative; display: block; height: 52px; border-radius: 12px; text-decoration: none; overflow: hidden; background: #fff; }
 .peel-code {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: flex-end;
   padding: 0 14px;
   font-family: var(--mono); font-weight: 600; font-size: .98rem; letter-spacing: .04em;
   color: var(--ink);
-  border: 2px dashed var(--ink);
-  border-radius: var(--r-sm);
+  border: 2px dashed color-mix(in srgb, var(--brand) 70%, var(--ink));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand) 7%, #fff);
 }
 .peel-cover {
   position: absolute; left: 0; top: 0; bottom: 0;
-  width: calc(100% - 46px);
+  width: calc(100% - 48px);
   display: flex; align-items: center; justify-content: center;
-  background: var(--violet);
+  background: linear-gradient(135deg, #6a4dff, var(--violet) 55%, var(--violet-deep));
   color: #fff;
-  font-weight: 600;
-  font-size: .98rem;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
-  padding-right: 10px;
-  transition: width .18s ease;
+  font-weight: 650; font-size: .98rem;
+  border-radius: 12px 0 0 12px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+  padding-right: 14px;
+  transition: width .3s cubic-bezier(.3,1.4,.5,1);
+  overflow: hidden;
 }
 .peel-cover::after { /* dobra do papel */
   content: '';
-  position: absolute; right: 0; top: 0; width: 16px; height: 100%;
-  background: linear-gradient(105deg, transparent 50%, var(--violet-deep) 50%);
+  position: absolute; right: 0; top: 0; width: 18px; height: 100%;
+  background: linear-gradient(100deg, transparent 50%, rgba(0,0,0,.28) 50%, rgba(255,255,255,.25));
 }
-.peel:hover .peel-cover { width: calc(100% - 60px); background: var(--violet-deep); }
+.peel-cover > span { position: relative; }
+.peel-cover::before { /* reflexo */
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-18deg);
+}
+.peel:hover .peel-cover, .peel:focus-visible .peel-cover { width: calc(100% - 78px); }
+.peel:hover .peel-cover::before { animation: sweep .8s ease; }
+@keyframes sweep { to { left: 120%; } }
 
-.deal-btn { height: 50px; border-radius: var(--r-sm); }
+.deal-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 52px; border-radius: 12px;
+  font-weight: 650; font-size: .98rem; text-decoration: none;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--ink);
+  transition: background .2s, color .2s;
+}
+.deal-btn svg { width: 15px; height: 15px; transition: transform .2s; }
+.deal-btn:hover { background: var(--ink); color: #fff; }
+.deal-btn:hover svg { transform: translate(2px, -2px); }
 
 /* Código revelado */
-.code-box { display: none; align-items: center; height: 50px; border: 2px dashed var(--violet); border-radius: var(--r-sm); background: var(--violet-tint); overflow: hidden; }
-.code-box strong { flex: 1; text-align: center; font-family: var(--mono); font-weight: 600; font-size: .98rem; letter-spacing: .02em; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; }
-.code-box button { height: 100%; border: 0; background: var(--violet); color: #fff; font-weight: 600; padding: 0 12px; cursor: pointer; }
+.code-box { display: none; align-items: center; height: 52px; border: 2px dashed var(--violet); border-radius: 12px; background: var(--violet-tint); overflow: hidden; }
+.code-box strong { flex: 1; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 1rem; letter-spacing: .03em; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; }
+.code-box button { height: 100%; border: 0; background: var(--violet); color: #fff; font-weight: 650; padding: 0 14px; cursor: pointer; min-width: 84px; }
 .code-box button:hover { background: var(--violet-deep); }
-.code-status { font-size: .8rem; text-align: center; color: var(--mint); font-weight: 650; min-height: 1.2em; margin: 0; }
+.code-box button.done { background: var(--mint); }
+.code-status { font-size: .8rem; text-align: center; color: var(--mint); font-weight: 600; min-height: 1.2em; margin: 0; }
+.ticket:not(.revealed) .code-status { display: none; }
 .ticket.revealed .peel { display: none; }
 .ticket.revealed .code-box { display: flex; }
+.ticket.revealed { box-shadow: 0 0 0 2px var(--violet), 0 18px 36px -18px rgba(79,46,240,.6); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ticket.revealed .ticket-stub { animation: tear .6s cubic-bezier(.3,1.5,.5,1) both; }
+  .ticket.revealed .code-box { animation: pop .45s cubic-bezier(.3,1.6,.5,1) both; }
+  @keyframes tear { 0% { transform: none; } 45% { transform: rotate(-7deg) translate(-3px, 4px); } 100% { transform: rotate(-2.5deg) translate(-2px, 2px); } }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket, .peel-cover, .deal-btn, .deal-btn svg { transition: none; }
+  .ticket:hover { transform: none; }
+  .pulse { animation: none; }
+  .ticket:hover .ticket-stub::before, .peel:hover .peel-cover::before { animation: none; }
+}
 
 /* Expirado */
 .ticket.is-expired { box-shadow: 0 0 0 1px var(--line); }
-.ticket.is-expired .ticket-stub { background: #f1f1f4; }
-.ticket.is-expired .sticker { background: #dcdce3; color: #6d6c7c; }
-.ticket.is-expired .sticker::before { background: #f1f1f4; }
+.ticket.is-expired:hover { transform: none; }
+.ticket.is-expired .ticket-stub { background: repeating-linear-gradient(135deg, #ececf2 0 2px, transparent 2px 9px), #f3f3f7; color: #8b8a99; }
+.ticket.is-expired .ticket-stub::after { border-color: #d6d6df; }
+.ticket.is-expired .stub-type { background: #fff; box-shadow: inset 0 0 0 1px #e0e0e8; }
 .ticket.is-expired h3, .ticket.is-expired .ticket-body > p { color: #7c7b8b; }
-.expired-note { font-size: .86rem; color: var(--ink-soft); text-align: center; }
+.ticket.is-expired .disc-num { text-decoration: line-through; text-decoration-thickness: 3px; }
+.expired-note { font-size: .86rem; color: var(--ink-soft); text-align: center; margin: 0; }
 
 /* ---------- Monograma / logo de loja ---------- */
 .slogo {
@@ -441,12 +499,14 @@ details.faq p { margin: 10px 0 0; color: var(--ink-soft); }
 }
 @media (max-width: 720px) {
   .site-header .wrap { gap: 14px; height: 62px; }
-  .ticket { grid-template-columns: 104px 1fr; }
-  .ticket::before, .ticket::after { left: 93px; }
-  .sticker { min-width: 78px; min-height: 64px; padding-left: 18px; }
-  .sticker b { font-size: 1.55rem; }
-  .ticket-body { padding: 16px 16px 12px 20px; }
-  .ticket-action { grid-column: 1 / -1; padding: 0 16px 16px; border-top: 2px dashed var(--line); padding-top: 14px; }
+  .ticket { --stub: 108px; grid-template-columns: var(--stub) 1fr; }
+  .disc-num { font-size: 2.2rem; }
+  .disc-text .disc-num { font-size: 1.1rem; max-width: 84px; }
+  .ticket-body { padding: 18px 16px 14px 22px; }
+  .ribbon { left: auto; right: 16px; }
+  .ticket-action { grid-column: 1 / -1; padding: 14px 16px 16px; border-top: 2px dashed var(--line); }
+  .ticket-stub { border-radius: 18px 0 0 0; }
+  .ticket::after { display: none; }
   .store-id { grid-template-columns: auto 1fr; gap: 18px; }
   .store-id .slogo { --size: 72px; border-radius: 20px; }
   .store-id > .btn { grid-column: 1 / -1; justify-self: start; }
