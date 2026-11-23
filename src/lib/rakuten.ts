@@ -11,6 +11,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { exec, query } from './db';
 import { clearCache } from './data';
 import { slugify } from './util';
+import { pingIndexNow } from './indexnow';
 
 const COUPON_API = 'https://api.linksynergy.com/coupon/1.0';
 const EVENTS_API = 'https://api.linksynergy.com/events/1.0/transactions';
@@ -86,6 +87,7 @@ export async function syncCoupons(): Promise<{ synced: number; deactivated: numb
   const startedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const before = await query('SELECT COUNT(*) AS n FROM stores');
   let page = 1, total = 1, synced = 0;
+  const changedStores = new Set<number>();
 
   do {
     const params = new URLSearchParams({ resultsperpage: String(PER_PAGE), pagenumber: String(page) });
@@ -109,7 +111,7 @@ export async function syncCoupons(): Promise<{ synced: number; deactivated: numb
       const code = text(l.couponcode);
       const externalId = createHash('sha1').update(`${mid}|${clickUrl}`).digest('hex');
 
-      await exec(
+      const up = await exec(
         `INSERT INTO coupons (store_id, source, external_id, type, title, description, code, discount_label, tracking_url, starts_at, expires_at, active)
          VALUES (?, 'rakuten', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
          ON DUPLICATE KEY UPDATE type=VALUES(type), title=VALUES(title), description=VALUES(description), code=VALUES(code),
@@ -120,6 +122,7 @@ export async function syncCoupons(): Promise<{ synced: number; deactivated: numb
           code, discountLabel(description), clickUrl, sqlDate(text(l.offerstartdate)), sqlDate(text(l.offerenddate)),
         ],
       );
+      if (up.affectedRows === 1) changedStores.add(storeId); // cupom novo
       synced++;
     }
     page++;
@@ -127,12 +130,22 @@ export async function syncCoupons(): Promise<{ synced: number; deactivated: numb
 
   // Cupons da Rakuten que não vieram nesta execução saíram do feed: desativa (não apaga, mantém histórico).
   // Se o feed veio vazio, não desativa nada: é mais provável ser falha momentânea do que todas as lojas sem cupom.
-  const off = synced > 0
-    ? await exec("UPDATE coupons SET active=0 WHERE source='rakuten' AND active=1 AND updated_at < ?", [startedAt])
-    : { affectedRows: 0 };
+  let off = { affectedRows: 0 };
+  if (synced > 0) {
+    const gone = await query("SELECT DISTINCT store_id FROM coupons WHERE source='rakuten' AND active=1 AND updated_at < ?", [startedAt]);
+    gone.forEach((r: any) => changedStores.add(Number(r.store_id)));
+    off = await exec("UPDATE coupons SET active=0 WHERE source='rakuten' AND active=1 AND updated_at < ?", [startedAt]);
+  }
   const after = await query('SELECT COUNT(*) AS n FROM stores');
   clearCache();
-  return { synced, deactivated: off.affectedRows, newStores: Number(after[0].n) - Number(before[0].n) };
+
+  // Avisa Bing/Yandex (IndexNow) só das lojas que ganharam ou perderam cupons.
+  let indexnow: unknown = null;
+  if (changedStores.size) {
+    const rows = await query("SELECT slug FROM stores WHERE id IN (?) AND network <> 'demo'", [[...changedStores]]);
+    indexnow = await pingIndexNow(['/', ...rows.map((r: any) => `/cupom-desconto/${r.slug}`)]);
+  }
+  return { synced, deactivated: off.affectedRows, newStores: Number(after[0].n) - Number(before[0].n), indexnow };
 }
 
 const eventsDate = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ');

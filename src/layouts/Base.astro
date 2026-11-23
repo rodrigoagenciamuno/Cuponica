@@ -3,6 +3,7 @@ import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '../styles/global.css';
 import { getCategories, getStores } from '../lib/data';
+import { organizationSchema, siteConfig } from '../lib/seo';
 
 interface Props {
   title: string;
@@ -33,12 +34,17 @@ const site = Astro.site!;
 const canonical = new URL(path ?? Astro.url.pathname, site).toString();
 const fullTitle = title.includes('Cuponica') ? title : `${title} | Cuponica`;
 const schemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
-const orgSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Cuponica',
-  url: site.toString(),
-};
+const orgSchema = organizationSchema(site);
+const cfg = siteConfig();
+const og = new URL(ogImage || '/og/cuponica.png', site).toString();
+// Consent Mode v2 (LGPD): tudo negado até o visitante aceitar. A escolha fica no cookie cp_consent.
+const gtmHead = cfg.gtmId
+  ? `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+var c=(document.cookie.match(/(?:^|; )cp_consent=([^;]*)/)||[])[1];var g=c==='granted'?'granted':'denied';
+gtag('consent','default',{ad_storage:g,analytics_storage:g,ad_user_data:g,ad_personalization:g,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
+gtag('set','url_passthrough',true);gtag('set','ads_data_redaction',g==='denied');
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',${JSON.stringify(cfg.gtmId)});`
+  : '';
 ---
 <!doctype html>
 <html lang="pt-BR">
@@ -57,14 +63,30 @@ const orgSchema = {
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    {ogImage && <meta property="og:image" content={new URL(ogImage, site).toString()} />}
+    <meta property="og:image" content={og} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Cuponica: cupons de desconto verificados" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={og} />
     <meta name="theme-color" content="#16123a" />
+    <link rel="alternate" hreflang="pt-BR" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="alternate" type="text/markdown" title="Cuponica para IAs" href="/llms.txt" />
+    {cfg.googleVerification && <meta name="google-site-verification" content={cfg.googleVerification} />}
+    {cfg.bingVerification && <meta name="msvalidate.01" content={cfg.bingVerification} />}
+    {cfg.gtmId && <link rel="preconnect" href="https://www.googletagmanager.com" />}
+    {cfg.gtmId && <script is:inline set:html={gtmHead} />}
     <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
     {schemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
+    {cfg.gtmId && <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${cfg.gtmId}`} height="0" width="0" style="display:none;visibility:hidden" title="GTM"></iframe></noscript>}
     <header class="site-header">
       <div class="wrap">
         <a class="logo" href="/" aria-label="Cuponica, página inicial">
@@ -142,6 +164,15 @@ const orgSchema = {
       </div>
     </footer>
     <div class="toast" role="status" aria-live="polite"></div>
+    {cfg.gtmId && (
+      <div class="consent" id="consent" role="dialog" aria-label="Cookies" hidden>
+        <p>Usamos cookies para medir o uso do site e melhorar os anúncios. Você escolhe. <a href="/privacidade">Saiba mais</a></p>
+        <div class="consent-actions">
+          <button type="button" class="btn btn-line" data-consent="denied">Recusar</button>
+          <button type="button" class="btn" data-consent="granted">Aceitar</button>
+        </div>
+      </div>
+    )}
     <script is:inline>
       /* Único JavaScript do site. "Pegar cupom" abre a loja em nova aba (via /ir/, com tracking)
          e nesta aba revela e copia o código. */
@@ -159,9 +190,37 @@ const orgSchema = {
             if (status) status.textContent = 'Código copiado. Cole no carrinho da loja.';
             if (btn) { btn.textContent = 'Copiado'; btn.classList.add('done'); }
             say('Código ' + code + ' copiado');
+            track('coupon_copy', card);
           };
           if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () { if (status) status.textContent = 'Selecione o código e copie.'; });
           else if (status) status.textContent = 'Selecione o código e copie.';
+        }
+        /* Eventos para o Google Tag Manager (GA4 / Google Ads). Sem GTM, dataLayer só acumula. */
+        var dl = window.dataLayer = window.dataLayer || [];
+        function track(name, el, extra) {
+          var card = el && el.closest && el.closest('[data-coupon]');
+          var ev = { event: name, page_path: location.pathname };
+          if (card) { ev.coupon_id = card.getAttribute('data-coupon'); ev.store = card.getAttribute('data-store'); ev.coupon_type = card.getAttribute('data-type'); }
+          for (var k in extra || {}) if (extra[k] != null) ev[k] = extra[k];
+          dl.push(ev);
+        }
+        document.addEventListener('click', function (e) {
+          var a = e.target.closest && e.target.closest('a[href^="/ir/"]');
+          if (a) track(a.hasAttribute('data-reveal') ? 'coupon_reveal' : 'outbound_click', a, { store: a.getAttribute('data-store') || undefined });
+        }, true);
+        /* Consentimento (LGPD + Consent Mode v2) */
+        var box = document.getElementById('consent');
+        if (box) {
+          if (!/(?:^|; )cp_consent=/.test(document.cookie)) box.hidden = false;
+          box.addEventListener('click', function (e) {
+            var b = e.target.closest && e.target.closest('[data-consent]');
+            if (!b) return;
+            var v = b.getAttribute('data-consent');
+            document.cookie = 'cp_consent=' + v + ';path=/;max-age=' + 60 * 60 * 24 * 180 + ';samesite=lax';
+            if (window.gtag) gtag('consent', 'update', { ad_storage: v, analytics_storage: v, ad_user_data: v, ad_personalization: v });
+            dl.push({ event: 'consent_' + v });
+            box.hidden = true;
+          });
         }
         document.addEventListener('click', function (e) {
           var el = e.target.closest && e.target.closest('[data-reveal], [data-copy]');

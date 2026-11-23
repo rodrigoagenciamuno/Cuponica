@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import CouponCard from '../components/CouponCard.astro';
 import StoreLogo from '../components/StoreLogo.astro';
 import { getFeaturedCoupons, getStores, getCategories } from '../lib/data';
-import { monthYear } from '../lib/seo';
+import { monthYear, storeListSchema } from '../lib/seo';
 import { daysLeft, expiryInfo, plural } from '../lib/ui';
 
 const [all, stores, categories] = await Promise.all([getFeaturedCoupons(60), getStores(), getCategories()]);
@@ -37,7 +37,10 @@ const siteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Cuponica',
+  alternateName: 'Cuponica Cupons de Desconto',
+  inLanguage: 'pt-BR',
   url: Astro.site!.toString(),
+  publisher: { '@id': new URL('/#organization', Astro.site!).toString() },
   potentialAction: {
     '@type': 'SearchAction',
     target: new URL('/busca?q={q}', Astro.site!).toString().replace('%7Bq%7D', '{q}'),
@@ -49,7 +52,7 @@ const siteSchema = {
   title={`Cuponica: cupons de desconto válidos em ${monthYear()}`}
   description="Cupons de desconto e ofertas verificadas das principais lojas online do Brasil. Atualizado todos os dias."
   path="/"
-  jsonLd={siteSchema}
+  jsonLd={[siteSchema, storeListSchema(Astro.site!, 'Lojas com cupons de desconto em destaque', stripStores.filter((s) => !s.demo))].filter(Boolean) as object[]}
   headerSearch={false}
 >
   <section class="hero">

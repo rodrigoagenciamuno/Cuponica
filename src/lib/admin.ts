@@ -1,3 +1,4 @@
+import { pingIndexNow } from './indexnow';
 /** Consultas e gravações usadas pelo painel admin. */
 import { exec, query } from './db';
 import { clearCache } from './data';
@@ -97,6 +98,7 @@ export async function saveStore(id: number | null, form: FormData): Promise<{ id
     await exec('INSERT IGNORE INTO store_categories (store_id, category_id) VALUES (?, ?)', [id, Number(c)]);
   }
   clearCache();
+  if (bool(form.get('active'))) void pingIndexNow([`/cupom-desconto/${slug}`]); // avisa Bing/Yandex sem travar o salvar
   return { id: id! };
 }
 
@@ -164,6 +166,8 @@ export async function saveCoupon(id: number | null, form: FormData): Promise<{ i
     id = r.insertId;
   }
   clearCache();
+  const [st] = await query("SELECT slug FROM stores WHERE id = ? AND network <> 'demo'", [storeId]);
+  if (st) void pingIndexNow([`/cupom-desconto/${st.slug}`, '/']);
   return { id: id! };
 }
 

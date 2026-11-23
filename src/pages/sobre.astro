@@ -1,10 +1,49 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageHead from '../components/PageHead.astro';
+import { breadcrumbSchema, siteConfig } from '../lib/seo';
+const crumbs = [{ name: 'Início', path: '/' }, { name: 'Quem somos', path: '/sobre' }];
+const { contactEmail } = siteConfig();
+const about = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: 'Quem somos — Cuponica',
+  url: new URL('/sobre', Astro.site!).toString(),
+  about: { '@id': new URL('/#organization', Astro.site!).toString() },
+};
 ---
-<Base title="Sobre a Cuponica" description="Sobre a Cuponica — Cuponica." path="/sobre">
-  <PageHead title="Sobre a Cuponica" />
+<Base
+  title="Quem somos: a Cuponica e como escolhemos os cupons"
+  description="A Cuponica é um site brasileiro de cupons de desconto. Veja de onde vêm os cupons, como conferimos cada um e como o site se mantém sem cobrar nada de você."
+  path="/sobre"
+  jsonLd={[about, breadcrumbSchema(Astro.site!, crumbs)]}
+>
+  <PageHead title="Quem somos" lede="Cupons que funcionam, das lojas em que você já compra." crumbs={crumbs} />
   <div class="wrap text-page">
-    <p>A Cuponica reúne cupons de desconto e ofertas das principais lojas online do Brasil, verificados pela nossa equipe. Texto institucional a definir.</p>
+    <p>A Cuponica é um site brasileiro de cupons de desconto e ofertas de lojas online. A ideia é simples: você procura a loja, vê na hora quais códigos valem hoje e quais as regras de cada um, e vai para o site oficial já com o desconto em mãos.</p>
+
+    <h2>De onde vêm os cupons</h2>
+    <p>Os cupons chegam por dois caminhos:</p>
+    <ul>
+      <li><strong>Redes de afiliados oficiais</strong>, como a Rakuten Advertising. As próprias lojas cadastram as promoções nessas redes, e o nosso sistema puxa as novidades várias vezes por dia.</li>
+      <li><strong>Parcerias diretas</strong> com lojas, que nos enviam cupons exclusivos para quem compra pela Cuponica.</li>
+    </ul>
+
+    <h2>Como mantemos a lista certa</h2>
+    <ul>
+      <li>Cupons saem do ar sozinhos quando vencem ou quando a loja encerra a promoção.</li>
+      <li>Cada cupom mostra a validade e as regras (valor mínimo, produtos, primeira compra) que a loja informou.</li>
+      <li>Cupons vencidos continuam visíveis na página da loja, marcados como expirados, para você saber o que já existiu.</li>
+      <li>O selo <strong>Verificado</strong> só aparece quando a nossa equipe conferiu o código.</li>
+    </ul>
+
+    <h2>Como a Cuponica ganha dinheiro</h2>
+    <p>Quando você compra depois de clicar em um link da Cuponica, a loja pode nos pagar uma comissão. É isso que mantém o site. O preço que você paga é o mesmo, com ou sem a Cuponica, e o uso é gratuito e sem cadastro.</p>
+
+    <h2>Fale com a gente</h2>
+    <p>
+      É uma loja e quer divulgar seus cupons, ou achou um cupom que não funcionou?
+      {contactEmail ? <>Escreva para <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.</> : <>Fale com a gente pelos nossos canais oficiais.</>}
+    </p>
   </div>
 </Base>

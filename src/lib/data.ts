@@ -23,6 +23,8 @@ export type Store = {
   best_label?: string | null;
   /** Loja fictícia de demonstração (network = demo). */
   demo: boolean;
+  /** Última mudança na loja ou em qualquer cupom dela (sitemap lastmod, dateModified). */
+  updated_at?: Date | null;
 };
 export type Coupon = {
   id: number;
@@ -108,6 +110,7 @@ function toStore(r: any): Store {
     active_coupons: r.active_coupons != null ? Number(r.active_coupons) : undefined,
     best_label: r.best_label ?? null,
     demo: r.network === 'demo',
+    updated_at: r.last_change ? new Date(r.last_change) : r.updated_at ? new Date(r.updated_at) : null,
   };
 }
 function sortCoupons(list: Coupon[]): Coupon[] {
@@ -133,7 +136,8 @@ const STORE_SQL = `
     (SELECT COUNT(*) FROM coupons c WHERE c.store_id = s.id AND c.active = 1
        AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP())) AS active_coupons,
     (SELECT c.discount_label FROM coupons c WHERE c.store_id = s.id AND c.active = 1 AND c.discount_label IS NOT NULL
-       AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP()) ORDER BY c.priority DESC, c.id DESC LIMIT 1) AS best_label
+       AND (c.expires_at IS NULL OR c.expires_at > UTC_TIMESTAMP()) ORDER BY c.priority DESC, c.id DESC LIMIT 1) AS best_label,
+    GREATEST(s.updated_at, COALESCE((SELECT MAX(c.updated_at) FROM coupons c WHERE c.store_id = s.id), s.updated_at)) AS last_change
   FROM stores s LEFT JOIN store_categories sc ON sc.store_id = s.id
   WHERE s.active = 1`;
 
