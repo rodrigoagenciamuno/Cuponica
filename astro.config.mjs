@@ -13,7 +13,8 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   trailingSlash: 'never',
-  build: { format: 'file' },
+  // CSS dentro do HTML: um pedido a menos antes de a página aparecer (melhora FCP/LCP no celular).
+  build: { format: 'file', inlineStylesheets: 'always' },
   compressHTML: true,
   prefetch: false,
   server: { host: true, port: Number(process.env.PORT) || 4321 },
