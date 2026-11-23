@@ -8,7 +8,8 @@ export const GET: APIRoute = async ({ url }) => {
   if (!cronAuthorized(url)) return new Response('forbidden', { status: 403 });
   if (!hasDatabase()) return Response.json({ ok: false, error: 'Banco não configurado' }, { status: 500 });
   try {
-    const days = Math.min(Math.max(Number(url.searchParams.get('dias') || 7), 1), 90);
+    // A Events API aceita no máximo 30 dias de intervalo (e só guarda 1–2 semanas).
+    const days = Math.min(Math.max(Number(url.searchParams.get('dias') || 7), 1), 30);
     const result = await syncConversions(days);
     console.log('[cron] sync-conversoes', result);
     return Response.json({ ok: true, ...result });

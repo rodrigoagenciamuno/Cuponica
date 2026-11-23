@@ -40,3 +40,24 @@ curl -s "https://cuponica.com.br/api/cron/sync-conversoes?key=SUA_CRON_KEY&dias=
 - Cupom expirado continua na página da loja, marcado como expirado (nunca vira 404).
 - Cada página tem canonical, Open Graph e JSON-LD (Organization, BreadcrumbList, FAQPage).
 - IP dos cliques é guardado só como hash (LGPD).
+
+## Conectar a Rakuten Advertising
+
+1. **Credenciais.** No portal de desenvolvedores da Rakuten (Applications), copie o *token-key* (string de 87 caracteres terminada em `=`, que é o Base64 de `client_id:client_secret`). O *SID* (ID da conta de publisher) aparece no painel.
+2. **Variáveis na Hostinger** (app Node.js → Variáveis de ambiente):
+   - `RAKUTEN_TOKEN_KEY` = token-key
+   - `RAKUTEN_SID` = SID
+   - `RAKUTEN_PUBLISHER_ID` = o mesmo SID na maioria das contas (usado no deeplink de lojas sem cupom)
+   - `RAKUTEN_NETWORK` = deixe vazio no primeiro teste
+3. **Teste sem gravar nada:** abra `https://cuponica.com.br/api/cron/rakuten-teste?key=CRON_KEY`.
+   Ele mostra se o token funcionou, as redes liberadas para a conta (com IDs de categoria e tipo de promoção),
+   5 cupons crus do feed e 3 transações da Events API. Coloque o ID da rede Brasil em `RAKUTEN_NETWORK`.
+4. **Primeira sincronização:** `https://cuponica.com.br/api/cron/sync-cupons?key=CRON_KEY`.
+   Lojas novas são criadas pelo MID do anunciante; edite texto, categorias e cor no `/admin`.
+5. **Cron Jobs do hPanel:**
+   - a cada 2h: `curl -s "https://cuponica.com.br/api/cron/sync-cupons?key=CRON_KEY"`
+   - 1x por dia: `curl -s "https://cuponica.com.br/api/cron/sync-conversoes?key=CRON_KEY&dias=14"`
+
+Limites da Rakuten: 100 chamadas/min por API, até 500 cupons por página (só XML). A Events API guarda só 1–2 semanas,
+aceita no máximo 30 dias por consulta e os valores são indicativos; o valor oficial de comissão está no Signature Orders Report.
+O feed de cupons só traz anunciantes com parceria aprovada: lojas sem parceria não aparecem.
