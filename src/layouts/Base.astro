@@ -2,6 +2,8 @@
 import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '../styles/global.css';
+// Fonte principal (latin) carregada já no início, para o texto aparecer com ela o quanto antes.
+import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import { getCategories, getStores } from '../lib/data';
 import { organizationSchema, siteConfig } from '../lib/seo';
 
@@ -51,6 +53,7 @@ gtag('set','url_passthrough',true);gtag('set','ads_data_redaction',g==='denied')
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={geistLatin} as="font" type="font/woff2" crossorigin />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
