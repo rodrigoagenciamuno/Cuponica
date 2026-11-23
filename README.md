@@ -61,3 +61,17 @@ curl -s "https://cuponica.com.br/api/cron/sync-conversoes?key=SUA_CRON_KEY&dias=
 Limites da Rakuten: 100 chamadas/min por API, até 500 cupons por página (só XML). A Events API guarda só 1–2 semanas,
 aceita no máximo 30 dias por consulta e os valores são indicativos; o valor oficial de comissão está no Signature Orders Report.
 O feed de cupons só traz anunciantes com parceria aprovada: lojas sem parceria não aparecem.
+
+## SEO, IA e marketing
+
+- **GTM** (`GTM_ID`): carregado com Consent Mode v2. Tudo começa negado até o visitante aceitar o aviso de cookies (LGPD).
+  Eventos no dataLayer: `coupon_reveal` (Pegar cupom), `coupon_copy`, `outbound_click` (Ver oferta/Ir para a loja), `consent_granted`/`consent_denied`,
+  com `coupon_id`, `store`, `coupon_type` e `page_path`. Use `coupon_reveal` + `outbound_click` como conversões no GA4/Google Ads.
+- **Verificação**: `GOOGLE_SITE_VERIFICATION` (Search Console) e `BING_SITE_VERIFICATION` (Bing Webmaster). Envie `/sitemap.xml` nos dois.
+- **ads.txt** (`ADS_TXT`) para Google Ad Manager/AdSense.
+- **IA**: `/robots.txt` libera os robôs de busca e de IA; `/llms.txt` e `/llms-full.txt` resumem lojas e ofertas
+  (sem os códigos, para a IA mandar a pessoa para a página da loja).
+- **IndexNow** (Bing, que alimenta ChatGPT Search e Copilot; Yandex): o sync de cupons e o admin avisam sozinhos as páginas que mudaram.
+  Na primeira vez, rode `/api/cron/indexnow?key=CRON_KEY` para enviar todas as URLs. A chave é derivada da CRON_KEY (`/indexnow-key.txt`).
+- **Dados estruturados**: Organization, WebSite, WebPage com dateModified, BreadcrumbList, ItemList de lojas e de ofertas, FAQPage
+  (lojas sem FAQ escrito ganham perguntas montadas com os dados reais da página), HowTo em Como funciona.

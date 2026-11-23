@@ -4,7 +4,7 @@ import CouponCard from '../../components/CouponCard.astro';
 import StoreCard from '../../components/StoreCard.astro';
 import PageHead from '../../components/PageHead.astro';
 import { getCategory, getStores, getStoreCoupons } from '../../lib/data';
-import { breadcrumbSchema, monthYear } from '../../lib/seo';
+import { breadcrumbSchema, monthYear, storeListSchema } from '../../lib/seo';
 
 const category = await getCategory(String(Astro.params.slug));
 if (!category) return Astro.rewrite('/404');
@@ -27,9 +27,9 @@ const onlyDemo = stores.length > 0 && stores.every((s) => s.demo);
 ---
 <Base
   title={`Cupons de desconto em ${category.name} | ${monthYear()}`}
-  description={`${category.intro ?? ''} ${stores.length} lojas e ${coupons.length} ofertas válidas hoje.`.trim()}
+  description={`${category.intro ?? `Cupons de desconto em ${category.name}.`} ${stores.length} ${stores.length === 1 ? 'loja' : 'lojas'} e ${coupons.length} ${coupons.length === 1 ? 'oferta válida' : 'ofertas válidas'} hoje, atualizadas todo dia.`}
   path={path}
-  jsonLd={breadcrumbSchema(Astro.site!, crumbs)}
+  jsonLd={[breadcrumbSchema(Astro.site!, crumbs), storeListSchema(Astro.site!, `Lojas de ${category.name} com cupom`, stores.filter((s) => !s.demo))].filter(Boolean) as object[]}
   section={path}
   noindex={onlyDemo}
 >

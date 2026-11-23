@@ -4,7 +4,7 @@ import CouponCard from '../../components/CouponCard.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import StoreLogo from '../../components/StoreLogo.astro';
 import { getStore, getStoreCoupons, getCategories, getStores } from '../../lib/data';
-import { breadcrumbSchema, faqSchema, monthYear } from '../../lib/seo';
+import { breadcrumbSchema, couponListSchema, defaultStoreFaq, faqSchema, monthYear, webPageSchema } from '../../lib/seo';
 import { onColor, plural } from '../../lib/ui';
 
 const store = await getStore(String(Astro.params.loja));
@@ -33,7 +33,16 @@ const description = active.length
   ? `${active.length} ${active.length === 1 ? 'cupom e oferta' : 'cupons e ofertas'} ${store.name} válidos hoje${codes ? `, ${codes} com código` : ''}. Verificados pela equipe Cuponica.`
   : `Cupons de desconto ${store.name}: veja as ofertas mais recentes e o histórico de códigos.`;
 
-const schemas = [breadcrumbSchema(Astro.site!, crumbs), faqSchema(store.faq)].filter(Boolean) as object[];
+// FAQ escrito no admin tem prioridade; sem ele, usamos perguntas montadas com os dados reais da página.
+const faq = store.faq.length ? store.faq : defaultStoreFaq(store.name, active);
+const modified = store.updated_at && store.updated_at > new Date(Date.now() - 864e5) ? store.updated_at : new Date();
+const schemas = [
+  webPageSchema(Astro.site!, path, title, description, modified),
+  breadcrumbSchema(Astro.site!, crumbs),
+  couponListSchema(Astro.site!, path, store.name, active),
+  faqSchema(faq),
+].filter(Boolean) as object[];
+const canGo = Boolean(store.website_url || active.some((c) => c.tracking_url));
 const goStore = `/ir/loja/${store.slug}?p=${encodeURIComponent(path)}`;
 const brand = store.brand_color || '#4f2ef0';
 const light = onColor(brand) === 'dark';
@@ -55,7 +64,7 @@ const updated = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-dig
             <li>Atualizado em {updated}</li>
           </ul>
         </div>
-        {store.website_url && <a class="btn btn-light" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
+        {canGo && <a class="btn btn-light" href={goStore} data-store={store.slug} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
       </div>
     </div>
   </section>
@@ -79,7 +88,7 @@ const updated = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-dig
             <div class="empty">
               <h2>Nenhum cupom {store.name} ativo agora</h2>
               <p class="muted">Novos cupons aparecem aqui assim que a loja lançar. Enquanto isso, veja as ofertas direto no site.</p>
-              {store.website_url && <a class="btn" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
+              {canGo && <a class="btn" href={goStore} target="_blank" rel="sponsored nofollow noopener">Ir para a loja</a>}
             </div>
           )}
         </section>
@@ -99,10 +108,10 @@ const updated = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-dig
           </section>
         )}
 
-        {store.faq.length > 0 && (
+        {faq.length > 0 && (
           <section class="section prose">
             <h2>Perguntas frequentes sobre cupons {store.name}</h2>
-            {store.faq.map((f) => (
+            {faq.map((f) => (
               <details class="faq">
                 <summary>{f.q}</summary>
                 <p>{f.a}</p>

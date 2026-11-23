@@ -523,3 +523,21 @@ details.faq p { margin: 10px 0 0; color: var(--ink-soft); }
   .hero-picks { display: none; }
   .hero { padding: 36px 0 96px; }
 }
+
+/* ==========================================================================
+   Aviso de cookies (LGPD). Só aparece quando há GTM configurado.
+   ========================================================================== */
+.consent { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 60; max-width: 720px; margin: 0 auto; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: 0 16px 40px rgba(22,18,58,.18); padding: 16px 18px; display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+.consent[hidden] { display: none; }
+.consent p { margin: 0; font-size: .93rem; color: var(--ink-soft); }
+.consent a { color: var(--violet); }
+.consent-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.consent .btn { padding: 10px 16px; }
+@media (max-width: 620px) { .consent { flex-direction: column; align-items: stretch; } .consent-actions .btn { flex: 1; } }
+.text-page { padding-bottom: 24px; }
+.text-page h2 { margin: 40px 0 12px; font-size: 1.35rem; }
+.text-page ul, .text-page ol { line-height: 1.7; padding-left: 1.2em; }
+.text-page li { margin: 6px 0; }
+.text-page table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .93rem; }
+.text-page th, .text-page td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.text-page .updated { color: var(--ink-soft); font-size: .9rem; }

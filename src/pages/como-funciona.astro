@@ -1,10 +1,54 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageHead from '../components/PageHead.astro';
+import { breadcrumbSchema, faqSchema } from '../lib/seo';
+const crumbs = [{ name: 'Início', path: '/' }, { name: 'Como funciona', path: '/como-funciona' }];
+const faq = [
+  { q: 'A Cuponica é gratuita?', a: 'Sim. Não cobramos nada e não pedimos cadastro. O site se mantém com comissões que as lojas pagam quando alguém compra pelos nossos links, sem aumentar o preço para você.' },
+  { q: 'Qual a diferença entre cupom e oferta?', a: 'Cupom tem um código para colar no carrinho da loja. Oferta é um desconto que já aparece no preço pelo link, sem código.' },
+  { q: 'O cupom não funcionou. E agora?', a: 'Confira o valor mínimo, se o produto está incluído e se o cupom vale só na primeira compra ou no app. Se tudo estiver certo, tente outro cupom da mesma loja.' },
+  { q: 'Posso usar mais de um cupom na mesma compra?', a: 'Quase sempre não: a maioria das lojas aceita um cupom por pedido. Use o de maior desconto para o seu carrinho.' },
+  { q: 'A Cuponica vende produtos?', a: 'Não. A compra, a entrega e a troca são feitas direto com a loja. A Cuponica só mostra os cupons e leva você ao site oficial.' },
+];
+const howTo = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'Como usar um cupom de desconto da Cuponica',
+  totalTime: 'PT2M',
+  step: [
+    { '@type': 'HowToStep', position: 1, name: 'Encontre a loja', text: 'Busque a loja pelo nome ou navegue pelas categorias.' },
+    { '@type': 'HowToStep', position: 2, name: 'Pegue o cupom', text: 'Clique em "Pegar cupom". A loja abre em outra aba e o código fica copiado.' },
+    { '@type': 'HowToStep', position: 3, name: 'Monte o carrinho', text: 'Escolha os produtos na loja e confira se o pedido cumpre as regras do cupom.' },
+    { '@type': 'HowToStep', position: 4, name: 'Cole o código', text: 'No campo de cupom do carrinho, cole o código e confira o desconto antes de pagar.' },
+  ],
+};
 ---
-<Base title="Como funciona" description="Como funciona — Cuponica." path="/como-funciona">
-  <PageHead title="Como funciona" />
+<Base
+  title="Como funciona: como usar um cupom de desconto"
+  description="Passo a passo para usar cupons da Cuponica: pegue o código, monte o carrinho e cole o cupom na loja. Veja também por que um cupom pode não funcionar."
+  path="/como-funciona"
+  jsonLd={[howTo, faqSchema(faq)!, breadcrumbSchema(Astro.site!, crumbs)]}
+>
+  <PageHead title="Como funciona" lede="Do cupom ao desconto em menos de dois minutos." crumbs={crumbs} />
   <div class="wrap text-page">
-    <p>Você escolhe um cupom, clica em Pegar cupom, cola o código no carrinho e finaliza a compra na loja. Quando você compra por meio dos nossos links, a loja pode nos pagar uma comissão, sem nenhum custo extra para você.</p>
+    <h2>Como usar um cupom</h2>
+    <ol>
+      <li><strong>Encontre a loja.</strong> Busque pelo nome no topo da página ou navegue pelas categorias.</li>
+      <li><strong>Pegue o cupom.</strong> Clique em "Pegar cupom". A loja abre em outra aba e o código aparece na Cuponica, já copiado.</li>
+      <li><strong>Monte o carrinho.</strong> Escolha os produtos e confira se o pedido cumpre as regras do cupom (valor mínimo, produtos incluídos).</li>
+      <li><strong>Cole o código.</strong> No campo de cupom do carrinho, cole o código e confira o desconto antes de pagar.</li>
+    </ol>
+    <p>Nas <strong>ofertas</strong> não há código: o desconto já aparece no preço quando você entra pelo link.</p>
+
+    <h2>Por que a Cuponica é gratuita</h2>
+    <p>Quando você compra depois de clicar em um link da Cuponica, a loja pode nos pagar uma comissão de afiliado. O preço é o mesmo para você. É assim que o site se mantém gratuito e sem cadastro.</p>
+
+    <h2>Perguntas frequentes</h2>
+    {faq.map((f) => (
+      <details class="faq">
+        <summary>{f.q}</summary>
+        <p>{f.a}</p>
+      </details>
+    ))}
   </div>
 </Base>

@@ -22,6 +22,8 @@ const live = !coupon.expired && coupon.expires_at && daysLeft(coupon.expires_at)
   class:list={['ticket', { 'is-expired': coupon.expired, 'is-exclusive': coupon.exclusive && !coupon.expired }]}
   id={`cupom-${coupon.id}`}
   data-type={coupon.type}
+  data-coupon={coupon.id}
+  data-store={store.slug}
   style={`--brand:${brand};--on-brand:${onBrand}`}
 >
   {coupon.exclusive && !coupon.expired && (
