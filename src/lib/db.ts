@@ -82,7 +82,51 @@ async function migrate(): Promise<void> {
       await p.query('INSERT INTO categories (slug, name, intro) VALUES (?,?,?)', [slug, name, intro]);
     }
   }
+  await applyDataFixes(p);
   console.log('[db] schema verificado');
+}
+
+/**
+ * Ajustes de dados que rodam uma única vez (registrados na tabela data_fixes).
+ * 2026-11-25: nomes, URLs e categorias das primeiras lojas da Rakuten, que chegaram com nomes internos
+ * da rede ("New Balance BR", "Netshoes WL"...) e sem categoria. Casadas pelo MID quando possível.
+ */
+async function applyDataFixes(p: mysql.Pool): Promise<void> {
+  await p.query(
+    'CREATE TABLE IF NOT EXISTS data_fixes (name VARCHAR(120) PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB',
+  );
+  const FIX = '2026-11-25-lojas-rakuten';
+  const [done] = await p.query('SELECT 1 FROM data_fixes WHERE name = ?', [FIX]);
+  if ((done as any[]).length) return;
+
+  await p.query(
+    "INSERT IGNORE INTO categories (slug, name, intro) VALUES ('alimentos', 'Alimentos e Bebidas', 'Cupons de desconto em alimentos, bebidas e nutrição.')",
+  );
+  const stores: [string, string, string, string[]][] = [
+    // slug atual, nome novo, slug novo, categorias
+    ['brae-hair-care', 'Braé', 'brae', ['beleza']],
+    ['new-balance-br', 'New Balance', 'new-balance', ['esportes', 'moda']],
+    ['umbro-br', 'Umbro', 'umbro', ['esportes', 'moda']],
+    ['netshoes-wl', 'Netshoes', 'netshoes', ['esportes', 'moda']],
+    ['multi', 'Multi', 'multi', ['eletronicos']],
+    ['mundo-danone', 'Mundo Danone', 'mundo-danone', ['alimentos']],
+  ];
+  for (const [oldSlug, name, newSlug, cats] of stores) {
+    const [rows] = await p.query("SELECT id FROM stores WHERE slug = ? AND network = 'rakuten'", [oldSlug]);
+    const id = (rows as any[])[0]?.id;
+    if (!id) continue;
+    const [taken] = await p.query('SELECT id FROM stores WHERE slug = ? AND id <> ?', [newSlug, id]);
+    const slug = (taken as any[]).length ? oldSlug : newSlug;
+    await p.query('UPDATE stores SET name = ?, slug = ? WHERE id = ?', [name, slug, id]);
+    for (const c of cats) {
+      await p.query(
+        'INSERT IGNORE INTO store_categories (store_id, category_id) SELECT ?, id FROM categories WHERE slug = ?',
+        [id, c],
+      );
+    }
+  }
+  await p.query('INSERT INTO data_fixes (name) VALUES (?)', [FIX]);
+  console.log('[db] ajuste aplicado:', FIX);
 }
 
 function ensureReady(): Promise<void> {
