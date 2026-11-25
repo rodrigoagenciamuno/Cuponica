@@ -14,6 +14,8 @@ import { slugify } from './util';
 import { pingIndexNow } from './indexnow';
 
 const COUPON_API = 'https://api.linksynergy.com/coupon/1.0';
+const PARTNERSHIPS_API = 'https://api.linksynergy.com/v1/partnerships';
+const ADVERTISERS_API = 'https://api.linksynergy.com/v2/advertisers';
 const EVENTS_API = 'https://api.linksynergy.com/events/1.0/transactions';
 const PER_PAGE = 500;
 
@@ -148,6 +150,67 @@ export async function syncCoupons(): Promise<{ synced: number; deactivated: numb
   return { synced, deactivated: off.affectedRows, newStores: Number(after[0].n) - Number(before[0].n), indexnow };
 }
 
+/**
+ * Partnerships API: cria uma loja para cada anunciante com parceria ativa, mesmo que ele não tenha cupom no feed.
+ * Muitos anunciantes (ex.: Mundo Danone) só têm a comissão padrão, sem cupom. Sem isso a loja nunca aparecia no site.
+ * Para lojas sem website_url, busca a URL na Advertisers API: com ela o "Ir para a loja" vira deeplink da Rakuten
+ * (RAKUTEN_PUBLISHER_ID + MID), e o clique gera comissão.
+ */
+export async function syncPartnerships(): Promise<{ partners: number; newStores: number; urlsFilled: number; newSlugs: string[] }> {
+  const LIMIT = 200;
+  let page = 1, partners = 0, newStores = 0, urlsFilled = 0;
+  const newSlugs: string[] = [];
+
+  while (page <= 50) {
+    const params = new URLSearchParams({ partner_status: 'active', limit: String(LIMIT), page: String(page) });
+    if (process.env.RAKUTEN_NETWORK) params.set('network', process.env.RAKUTEN_NETWORK);
+    const res = await rakutenGet(`${PARTNERSHIPS_API}?${params}`, 'application/json');
+    const body = await res.text();
+    if (!res.ok) throw new Error(`Partnerships API página ${page}: ${res.status} ${body.slice(0, 300)}`);
+    const json: any = JSON.parse(body || '{}');
+    const list: any[] = Array.isArray(json.partnerships) ? json.partnerships : [];
+
+    for (const p of list) {
+      const mid = p?.advertiser?.id != null ? String(p.advertiser.id) : null;
+      const name = p?.advertiser?.name ? String(p.advertiser.name).trim() : null;
+      if (!mid || !name) continue;
+      partners++;
+
+      const existing = await query("SELECT id, slug, website_url FROM stores WHERE network='rakuten' AND network_mid=?", [mid]);
+      let storeId: number;
+      let websiteUrl = existing[0]?.website_url || '';
+      if (existing[0]) {
+        storeId = existing[0].id;
+      } else {
+        storeId = await ensureStore(mid, name);
+        const row = await query('SELECT slug FROM stores WHERE id=?', [storeId]);
+        if (row[0]) newSlugs.push(row[0].slug);
+        newStores++;
+      }
+
+      if (!websiteUrl) {
+        const adv = await rakutenGet(`${ADVERTISERS_API}/${encodeURIComponent(mid)}`, 'application/json');
+        if (adv.ok) {
+          const a: any = JSON.parse((await adv.text()) || '{}');
+          const url = String(a?.advertiser?.url || '').trim();
+          if (/^https?:\/\//i.test(url)) {
+            await exec("UPDATE stores SET website_url=? WHERE id=? AND (website_url IS NULL OR website_url='')", [url.slice(0, 500), storeId]);
+            urlsFilled++;
+          }
+        }
+      }
+    }
+
+    const total = Number(json?._metadata?.total || 0);
+    const hasNext = Boolean(json?._metadata?._links?.next);
+    if (list.length < LIMIT || (total && page * LIMIT >= total) || (!hasNext && !total)) break;
+    page++;
+  }
+
+  if (newStores || urlsFilled) clearCache();
+  return { partners, newStores, urlsFilled, newSlugs };
+}
+
 const eventsDate = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ');
 
 /**
@@ -247,6 +310,20 @@ export async function rakutenDiagnostics(): Promise<Record<string, unknown>> {
   } else {
     out.coupons = `ERRO ${feed.status}: ${feedBody.slice(0, 300)}`;
   }
+
+  const pp = new URLSearchParams({ partner_status: 'active', limit: '10' });
+  if (process.env.RAKUTEN_NETWORK) pp.set('network', process.env.RAKUTEN_NETWORK);
+  const parts = await rakutenGet(`${PARTNERSHIPS_API}?${pp}`, 'application/json');
+  const partsBody = await parts.text();
+  out.partnerships = parts.ok
+    ? (() => {
+        const j: any = JSON.parse(partsBody || '{}');
+        return {
+          total: j?._metadata?.total,
+          sample: (j.partnerships || []).map((p: any) => `${p?.advertiser?.id}: ${p?.advertiser?.name} (${p?.status})`),
+        };
+      })()
+    : `ERRO ${parts.status}: ${partsBody.slice(0, 300)}`;
 
   const end = new Date();
   const ev = new URLSearchParams({
