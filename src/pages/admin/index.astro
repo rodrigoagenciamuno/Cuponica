@@ -3,32 +3,14 @@ import Admin from '../../layouts/Admin.astro';
 import NoDb from '../../components/NoDb.astro';
 import { hasDatabase } from '../../lib/db';
 import { dashboard } from '../../lib/admin';
-import { demoCount, removeDemo, seedDemo } from '../../lib/demo-seed';
 
 const db = hasDatabase();
 let data: Awaited<ReturnType<typeof dashboard>> | null = null;
 let error: string | null = null;
-let flash: string | null = null;
+const flash: string | null = null;
 
-if (db && Astro.request.method === 'POST') {
-  const action = String((await Astro.request.formData()).get('demo') || '');
-  try {
-    if (action === 'carregar') {
-      const r = await seedDemo();
-      return Astro.redirect(`/admin?demo=ok&l=${r.stores}&c=${r.coupons}`);
-    }
-    if (action === 'remover') {
-      const n = await removeDemo();
-      return Astro.redirect(`/admin?demo=removido&l=${n}`);
-    }
-  } catch (e: any) { error = `Erro nos dados de demonstração: ${e?.message || e}`; }
-}
-const q = Astro.url.searchParams;
-if (q.get('demo') === 'ok') flash = `Demonstração carregada: ${q.get('l')} lojas e ${q.get('c')} cupons fictícios no ar.`;
-if (q.get('demo') === 'removido') flash = `${q.get('l')} lojas de demonstração removidas, com seus cupons.`;
-let demoStores = 0;
 if (db) {
-  try { data = await dashboard(); demoStores = await demoCount(); } catch (e: any) { error = `Erro ao consultar o banco: ${e?.message || e}`; }
+  try { data = await dashboard(); } catch (e: any) { error = `Erro ao consultar o banco: ${e?.message || e}`; }
 }
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const n = new Intl.NumberFormat('pt-BR');
@@ -36,22 +18,6 @@ const n = new Intl.NumberFormat('pt-BR');
 <Admin title="Resumo" error={error} flash={flash}>
   <h1>Resumo</h1>
   {!db && <NoDb />}
-  {db && (
-    <div class="card between" style="margin-bottom:22px">
-      <div>
-        <strong>Lojas de demonstração</strong>
-        <div class="muted" style="font-size:.9rem">
-          {demoStores
-            ? `${demoStores} lojas fictícias estão no ar. Elas ficam fora do sitemap e com noindex. Remova quando as lojas reais entrarem.`
-            : '12 lojas e 37 cupons fictícios para ver o site cheio enquanto as lojas reais não entram. Ficam fora do sitemap e com noindex.'}
-        </div>
-      </div>
-      <form method="post" class="row">
-        <button class="btn" name="demo" value="carregar">{demoStores ? 'Recarregar demonstração' : 'Carregar demonstração'}</button>
-        {demoStores > 0 && <button class="btn danger" name="demo" value="remover">Remover demonstração</button>}
-      </form>
-    </div>
-  )}
   {data && (
     <>
       <div class="kpis">

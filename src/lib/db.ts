@@ -97,8 +97,11 @@ async function applyDataFixes(p: mysql.Pool): Promise<void> {
   );
   const FIX = '2026-11-25-lojas-rakuten';
   const [done] = await p.query('SELECT 1 FROM data_fixes WHERE name = ?', [FIX]);
-  if ((done as any[]).length) return;
+  if (!(done as any[]).length) await fixLojasRakuten(p, FIX);
+  await limpaDemonstracao(p);
+}
 
+async function fixLojasRakuten(p: mysql.Pool, FIX: string): Promise<void> {
   await p.query(
     "INSERT IGNORE INTO categories (slug, name, intro) VALUES ('alimentos', 'Alimentos e Bebidas', 'Cupons de desconto em alimentos, bebidas e nutrição.')",
   );
@@ -127,6 +130,18 @@ async function applyDataFixes(p: mysql.Pool): Promise<void> {
   }
   await p.query('INSERT INTO data_fixes (name) VALUES (?)', [FIX]);
   console.log('[db] ajuste aplicado:', FIX);
+}
+
+async function limpaDemonstracao(p: mysql.Pool): Promise<void> {
+  // 2026-11-25: fim das lojas de demonstração. Apaga as que sobrarem e os cliques do período de demonstração
+  // (cliques de lojas que não existem mais).
+  const FIX2 = '2026-11-25-limpa-demonstracao';
+  const [done2] = await p.query('SELECT 1 FROM data_fixes WHERE name = ?', [FIX2]);
+  if ((done2 as any[]).length) return;
+  await p.query("DELETE FROM stores WHERE network = 'demo'");
+  await p.query('DELETE FROM clicks WHERE store_id NOT IN (SELECT id FROM stores)');
+  await p.query('INSERT INTO data_fixes (name) VALUES (?)', [FIX2]);
+  console.log('[db] ajuste aplicado:', FIX2);
 }
 
 function ensureReady(): Promise<void> {
