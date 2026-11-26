@@ -42,6 +42,9 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
 
   const response = await next();
 
+  // Rotas de API (crons, testes): nunca em cache, nem no CDN da Hostinger.
+  if (path.startsWith('/api/')) response.headers.set('Cache-Control', 'no-store');
+
   if (isPage && response.headers.get('content-type')?.includes('text/html') && !response.headers.has('cache-control')) {
     response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
   }
