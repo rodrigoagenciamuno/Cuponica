@@ -96,3 +96,14 @@ CREATE TABLE IF NOT EXISTS conversions (
   UNIQUE KEY uq_network_txn (network, network_txn_id),
   KEY idx_click (click_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registro das execuções dos crons (mostrado no Resumo do admin).
+CREATE TABLE IF NOT EXISTS cron_runs (
+  id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  job         VARCHAR(40) NOT NULL,
+  ok          TINYINT(1) NOT NULL,
+  summary     VARCHAR(1000) NULL,
+  user_agent  VARCHAR(200) NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_job_time (job, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

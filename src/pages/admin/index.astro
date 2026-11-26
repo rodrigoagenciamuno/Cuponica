@@ -3,21 +3,61 @@ import Admin from '../../layouts/Admin.astro';
 import NoDb from '../../components/NoDb.astro';
 import { hasDatabase } from '../../lib/db';
 import { dashboard } from '../../lib/admin';
+import { lastCronRuns } from '../../lib/cronlog';
 
 const db = hasDatabase();
 let data: Awaited<ReturnType<typeof dashboard>> | null = null;
+let crons: Awaited<ReturnType<typeof lastCronRuns>> | null = null;
 let error: string | null = null;
 const flash: string | null = null;
 
 if (db) {
-  try { data = await dashboard(); } catch (e: any) { error = `Erro ao consultar o banco: ${e?.message || e}`; }
+  try { data = await dashboard(); crons = await lastCronRuns(); } catch (e: any) { error = `Erro ao consultar o banco: ${e?.message || e}`; }
 }
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const n = new Intl.NumberFormat('pt-BR');
+const quando = (d: any) => d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }) : 'nunca';
+const horasDesde = (d: any) => d ? (Date.now() - new Date(d).getTime()) / 3600e3 : Infinity;
+const cronInfo = [
+  { job: 'sync-cupons', label: 'Lojas e cupons (a cada 2h)', limite: 3 },
+  { job: 'sync-conversoes', label: 'Vendas e comissão (1x por dia)', limite: 26 },
+];
 ---
 <Admin title="Resumo" error={error} flash={flash}>
   <h1>Resumo</h1>
   {!db && <NoDb />}
+  {crons && (
+    <div class="card" style="margin-bottom:22px">
+      <strong>Atualização automática (crons)</strong>
+      <table style="margin-top:10px">
+        <thead><tr><th>Tarefa</th><th>Última execução</th><th>Último sucesso</th><th class="n">Execuções em 24h</th><th>Situação</th></tr></thead>
+        <tbody>
+          {cronInfo.map(({ job, label, limite }) => {
+            const c = crons![job];
+            const atrasado = horasDesde(c.lastOk?.created_at) > limite;
+            const situacao = c.badKey24h && !c.runs24h
+              ? `Chamado com a chave errada (${c.badKey24h}x em 24h): confira a CRON_KEY no comando do cron.`
+              : c.last && !c.last.ok && c.last.summary !== 'chave errada'
+                ? `Última execução falhou: ${String(c.last.summary).slice(0, 160)}`
+                : !c.lastOk
+                  ? 'Nunca rodou: o cron do hPanel não está chamando o site.'
+                  : atrasado
+                    ? `Parado: sem execução com sucesso há mais de ${limite}h.`
+                    : 'Funcionando';
+            return (
+              <tr>
+                <td>{label}</td>
+                <td>{quando(c.last?.created_at)}</td>
+                <td>{quando(c.lastOk?.created_at)}</td>
+                <td class="n">{n.format(c.runs24h)}</td>
+                <td style={situacao === 'Funcionando' ? 'color:#15803d' : 'color:#b91c1c'}>{situacao}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
   {data && (
     <>
       <div class="kpis">
