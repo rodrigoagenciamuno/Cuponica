@@ -98,6 +98,8 @@ async function applyDataFixes(p: mysql.Pool): Promise<void> {
   const FIX = '2026-11-25-lojas-rakuten';
   const [done] = await p.query('SELECT 1 FROM data_fixes WHERE name = ?', [FIX]);
   if (!(done as any[]).length) await fixLojasRakuten(p, FIX);
+  const [done3] = await p.query('SELECT 1 FROM data_fixes WHERE name = ?', ['2026-11-26-zupper-zattini']);
+  if (!(done3 as any[]).length) await fixLojasRakuten(p, '2026-11-26-zupper-zattini');
   await limpaDemonstracao(p);
 }
 
@@ -113,6 +115,9 @@ async function fixLojasRakuten(p: mysql.Pool, FIX: string): Promise<void> {
     ['netshoes-wl', 'Netshoes', 'netshoes', ['esportes', 'moda']],
     ['multi', 'Multi', 'multi', ['eletronicos']],
     ['mundo-danone', 'Mundo Danone', 'mundo-danone', ['alimentos']],
+    // 2026-11-26
+    ['zupper-viagens', 'Zupper', 'zupper', ['viagens']],
+    ['zattini-wl', 'Zattini', 'zattini', ['moda']],
   ];
   for (const [oldSlug, name, newSlug, cats] of stores) {
     const [rows] = await p.query("SELECT id FROM stores WHERE slug = ? AND network = 'rakuten'", [oldSlug]);

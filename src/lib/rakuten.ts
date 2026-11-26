@@ -72,9 +72,41 @@ export function discountLabel(s: string | null): string | null {
   return null;
 }
 
-async function ensureStore(mid: string, name: string): Promise<number> {
+/**
+ * Nome de vitrine a partir do nome interno da Rakuten: tira sufixos de conta/rede
+ * ("New Balance BR", "Netshoes WL", "Zupper Viagens" fica como está; "Brae Hair Care" não muda).
+ */
+export function cleanStoreName(raw: string): string {
+  let name = String(raw).trim();
+  for (let i = 0; i < 3; i++) {
+    const next = name.replace(/[\s\-–|]+(BR|WL|Brasil|Brazil|Brazilian|LATAM|BRL|Affiliate|Afiliados?)$/i, '').trim();
+    if (next === name || !next) break;
+    name = next;
+  }
+  return name || String(raw).trim();
+}
+
+/** Categorias da Rakuten (texto livre, PT ou EN) → slugs das categorias do site. */
+const CATEGORY_RULES: [RegExp, string][] = [
+  [/vestu|roupa|moda|apparel|clothing|fashion|cal[cç]ad|shoe|footwear|acess[oó]rio|accessor|j[oó]ia|jewel/i, 'moda'],
+  [/esport|sport|fitness|outdoor|suplement/i, 'esportes'],
+  [/beleza|beauty|perfum|cosm[eé]t|fragr|sa[uú]de|health|farm[aá]c|pharm|cabelo|hair/i, 'beleza'],
+  [/eletr[oô]n|electron|computa|computer|inform[aá]t|celular|phone|game|tecnolog|tech/i, 'eletronicos'],
+  [/viag|travel|f[eé]rias|vacation|hotel|passage|flight|turismo|tourism/i, 'viagens'],
+  [/casa|home|decora|m[oó]ve|furnit|utilidade|kitchen|cozinha|jardim|garden/i, 'casa'],
+  [/aliment|food|bebida|beverage|drink|gourmet|mercado|grocer|nutri/i, 'alimentos'],
+];
+export function mapCategories(rakutenCategories: unknown): string[] {
+  const list = Array.isArray(rakutenCategories) ? rakutenCategories.map(String) : [];
+  const out = new Set<string>();
+  for (const c of list) for (const [re, slug] of CATEGORY_RULES) if (re.test(c)) out.add(slug);
+  return [...out];
+}
+
+async function ensureStore(mid: string, rawName: string): Promise<number> {
   const rows = await query("SELECT id FROM stores WHERE network='rakuten' AND network_mid=?", [mid]);
   if (rows[0]) return rows[0].id;
+  const name = cleanStoreName(rawName);
   let slug = slugify(name);
   const dup = await query('SELECT id FROM stores WHERE slug=?', [slug]);
   if (dup[0]) slug = `${slug}-${mid}`;
@@ -183,6 +215,14 @@ export async function syncPartnerships(): Promise<{ partners: number; newStores:
         storeId = existing[0].id;
       } else {
         storeId = await ensureStore(mid, name);
+        // Loja nova: já entra com as categorias que a Rakuten informa (quando batem com as do site).
+        const cats = mapCategories(p?.advertiser?.categories);
+        if (cats.length) {
+          await exec(
+            'INSERT IGNORE INTO store_categories (store_id, category_id) SELECT ?, id FROM categories WHERE slug IN (?)',
+            [storeId, cats],
+          );
+        }
         const row = await query('SELECT slug FROM stores WHERE id=?', [storeId]);
         if (row[0]) newSlugs.push(row[0].slug);
         newStores++;
