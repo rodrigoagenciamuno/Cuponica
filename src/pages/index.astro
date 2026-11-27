@@ -31,6 +31,11 @@ const ending = all
   .filter((c) => c.expires_at && daysLeft(c.expires_at) <= 3)
   .sort((a, b) => a.expires_at!.getTime() - b.expires_at!.getTime())
   .slice(0, 6);
+// Descrição para o Google: cita a marca e as lojas com mais cupons (cresce sozinha com lojas novas).
+const descStores = stripStores.filter((s) => !s.demo).slice(0, 4).map((s) => s.name);
+const homeDescription = descStores.length >= 2
+  ? `A Cuponica reúne cupons de desconto e ofertas verificadas de ${descStores.slice(0, -1).join(', ')} e ${descStores.at(-1)}, entre ${stores.length} lojas. Atualizado todos os dias, grátis e sem cadastro.`
+  : 'A Cuponica reúne cupons de desconto e ofertas verificadas das principais lojas online do Brasil. Atualizado todos os dias, grátis e sem cadastro.';
 const catCounts = new Map(categories.map((c) => [c.id, stores.filter((s) => s.categories.includes(c.id)).length]));
 
 const siteSchema = {
@@ -50,7 +55,7 @@ const siteSchema = {
 ---
 <Base
   title={`Cuponica: cupons de desconto válidos em ${monthYear()}`}
-  description="Cupons de desconto e ofertas verificadas das principais lojas online do Brasil. Atualizado todos os dias."
+  description={homeDescription}
   path="/"
   jsonLd={[siteSchema, storeListSchema(Astro.site!, 'Lojas com cupons de desconto em destaque', stripStores.filter((s) => !s.demo))].filter(Boolean) as object[]}
   headerSearch={false}
@@ -60,8 +65,8 @@ const siteSchema = {
       <div class="hero-copy">
         <p class="hero-date">Atualizado hoje, {updated}</p>
         <h1>Cupons de desconto verificados das lojas que você usa.</h1>
-        <p class="hero-lede">Códigos e ofertas conferidos todos os dias. Sem cadastro e sem custo.</p>
-        <form class="big-search" action="/busca" method="get" role="search">
+        <p class="hero-lede">A Cuponica confere códigos e ofertas todos os dias. Sem cadastro e sem custo.</p>
+        <form class="big-search" action="/busca" method="get" role="search" data-nosnippet>
           <label class="sr" for="busca-hero">Buscar loja</label>
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13l4.5 4.5" stroke-linecap="round"/></svg>
           <input id="busca-hero" type="search" name="q" placeholder="Busque uma loja" autocomplete="off" />
