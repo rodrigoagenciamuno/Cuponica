@@ -5,6 +5,18 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
   const url = ctx.url;
   const path = url.pathname;
 
+  /* ---------- Domínio único: www → sem www (301) ----------
+     Sem isso, www.cuponica.com.br responde 200 com conteúdo duplicado e o
+     Search Console marca como "Página alternativa com tag canônica adequada". */
+  const host = (ctx.request.headers.get('x-forwarded-host') || ctx.request.headers.get('host') || url.host)
+    .split(',')[0].trim().toLowerCase();
+  if (host.startsWith('www.')) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `https://${host.slice(4)}${path}${url.search}` },
+    });
+  }
+
   /* ---------- Painel admin: exige login ---------- */
   if (path === '/admin' || path.startsWith('/admin/')) {
     if (path !== '/admin/entrar' && !isAdmin(ctx.cookies)) {
